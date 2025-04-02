@@ -60,7 +60,7 @@
 
             data.forEach(item => {
                 let point = document.createElement('a-sphere');
-                point.setAttribute('position', `${item.X} ${item.Y} ${item.Z}`);
+                point.setAttribute('position', `${item.X} ${item.Z} ${item.Y}`);
                 point.setAttribute('radius', '1'); // Aumenta o tamanho dos pontos
                 point.setAttribute('color', 'red');
                 container.appendChild(point);
