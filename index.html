@@ -20,8 +20,7 @@
       
         <!-- Câmera com controles de movimento -->
         <a-entity movement-controls="fly: true" id="player" position="5 2 10">
-            <a-camera wasd-controls look-controls >
-            </a-camera>
+            <a-camera id="camera" wasd-controls="acceleration: 100" look-controls="pointerLockEnabled: true"></a-camera>
             <a-entity cursor="rayOrigin: mouse"></a-entity>
             <a-entity laser-controls="hand: right"></a-entity>
         </a-entity>
@@ -84,7 +83,7 @@
                 label.setAttribute('scale', '3 3 3');
                 
                 // Rotaciona o rótulo para sempre olhar para o jogador
-                label.setAttribute('look-at', '[player]');
+                label.setAttribute('look-at', '#camera');
                 
                 container.appendChild(label);
             });
