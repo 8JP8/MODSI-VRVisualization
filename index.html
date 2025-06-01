@@ -13,24 +13,84 @@
         body {
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden; /* Prevent scrollbars from A-Frame canvas */
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+        
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            color: white;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-content {
+            text-align: center;
+            max-width: 400px;
+            padding: 2rem;
+        }
+        
+        .loading-title {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 1rem;
+            color: #ffffff;
+        }
+        
+        .loading-text {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #4fc3f7;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto 1rem;
         }
         
         /* Room selector UI */
         .room-selector {
             position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 15px;
+            bottom: 25px;
+            left: 25px;
+            background: linear-gradient(135deg, rgba(30, 60, 114, 0.95) 0%, rgba(42, 82, 152, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            border-radius: 16px;
+            padding: 20px;
             color: white;
             z-index: 1000;
-            min-width: 280px; /* Increased min-width slightly */
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
+            min-width: 280px;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4), 
+                        0 0 0 1px rgba(79, 195, 247, 0.1) inset;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+        
+        .room-selector:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 64px rgba(0, 0, 0, 0.5),
+                        0 0 0 1px rgba(79, 195, 247, 0.2) inset;
         }
         
         .room-selector.hidden {
@@ -40,33 +100,43 @@
         }
         
         .room-selector h3 {
-            margin: 0 0 10px 0;
-            font-size: 14px;
+            margin: 0 0 15px 0;
+            font-size: 16px;
             font-weight: 600;
-            color: #4CAF50; /* Babia Green */
+            color: #4fc3f7;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .room-icon {
+            width: 18px;
+            height: 18px;
+            opacity: 0.9;
         }
         
         .room-input-group {
             display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
+            gap: 10px;
+            margin-bottom: 12px;
         }
         
         .room-input {
             flex: 1;
-            padding: 8px 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 6px;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            border-radius: 8px;
             color: white;
             font-size: 14px;
             outline: none;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
         
         .room-input:focus {
-            border-color: #4CAF50;
-            background: rgba(255, 255, 255, 0.15);
+            border-color: #4fc3f7;
+            background: rgba(79, 195, 247, 0.1);
+            box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.1);
         }
         
         .room-input::placeholder {
@@ -74,93 +144,102 @@
         }
         
         .room-btn {
-            padding: 8px 16px;
-            background: #4CAF50;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             color: white;
             cursor: pointer;
             font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            display: flex; /* For spinner alignment */
-            align-items: center; /* For spinner alignment */
-            justify-content: center; /* For spinner alignment */
-        }
-
-        .room-btn:disabled {
-            background: #aaa;
-            cursor: not-allowed;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
         
-        .room-btn:hover:not(:disabled) {
-            background: #45a049;
-            transform: translateY(-1px);
+        .room-btn:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
         }
         
-        .room-btn:active:not(:disabled) {
+        .room-btn:hover:before {
+            left: 100%;
+        }
+        
+        .room-btn:hover {
+            background: linear-gradient(135deg, #29b6f6 0%, #0288d1 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 195, 247, 0.4);
+        }
+        
+        .room-btn:active {
             transform: translateY(0px);
         }
         
         .room-status {
-            font-size: 12px;
-            margin-top: 8px;
-            padding: 6px 8px;
-            border-radius: 4px;
+            font-size: 13px;
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
             text-align: center;
-            display: flex; /* For spinner alignment */
-            align-items: center; /* For spinner alignment */
-            justify-content: center; /* For spinner alignment */
+            font-weight: 500;
         }
         
         .room-status.success {
-            background: rgba(76, 175, 80, 0.2);
-            color: #4CAF50;
+            background: rgba(76, 175, 80, 0.15);
+            color: #81c784;
             border: 1px solid rgba(76, 175, 80, 0.3);
         }
         
         .room-status.error {
-            background: rgba(244, 67, 54, 0.2);
-            color: #f44336;
+            background: rgba(244, 67, 54, 0.15);
+            color: #e57373;
             border: 1px solid rgba(244, 67, 54, 0.3);
         }
         
         .room-status.loading {
-            background: rgba(33, 150, 243, 0.2);
-            color: #2196F3;
-            border: 1px solid rgba(33, 150, 243, 0.3);
+            background: rgba(79, 195, 247, 0.15);
+            color: #4fc3f7;
+            border: 1px solid rgba(79, 195, 247, 0.3);
         }
         
         /* Minimize button */
         .minimize-btn {
             position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            border-radius: 4px;
-            color: white;
+            top: 12px;
+            right: 12px;
+            background: rgba(79, 195, 247, 0.15);
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            border-radius: 6px;
+            color: #4fc3f7;
             cursor: pointer;
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
-            transition: all 0.2s ease;
-            line-height: 1; /* Ensure text is centered vertically */
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
         }
         
         .minimize-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(79, 195, 247, 0.25);
+            transform: scale(1.1);
         }
         
         /* Collapsed state */
         .room-selector.collapsed {
-            padding: 10px;
+            padding: 12px 16px;
             min-width: auto;
             cursor: pointer;
-            width: auto; /* Adjust width when collapsed */
+            border-radius: 12px;
         }
         
         .room-selector.collapsed .room-content {
@@ -168,64 +247,134 @@
         }
         
         .room-selector.collapsed .minimize-btn {
-            display: none; /* Hide minimize button when collapsed, as clicking the panel expands it */
+            display: none;
         }
         
         .collapsed-indicator {
             display: none;
-            font-size: 12px;
-            color: #4CAF50;
+            font-size: 13px;
+            color: #4fc3f7;
+            font-weight: 500;
+            user-select: none;
+            pointer-events: none;
         }
         
         .room-selector.collapsed .collapsed-indicator {
             display: block;
         }
         
-        /* Hide in VR/fullscreen is handled by JS, but this can be a fallback */
-        .a-fullscreen .room-selector { /* A-Frame adds .a-fullscreen to body */
-             display: none !important;
+        /* Hide in VR/fullscreen */
+        @media screen and (max-width: 600px) {
+            .room-selector {
+                display: none;
+            }
         }
-
+        
         /* Loading spinner */
         .spinner {
             display: inline-block;
-            width: 12px;
-            height: 12px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(79, 195, 247, 0.3);
             border-radius: 50%;
-            border-top-color: #fff; /* Spinner color for button */
+            border-top-color: #4fc3f7;
             animation: spin 1s ease-in-out infinite;
-            margin-right: 6px;
-        }
-        .room-status .spinner { /* Spinner color for status message */
-             border-top-color: #2196F3;
+            margin-right: 8px;
         }
         
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        
+        /* Error overlay */
+        .error-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1999; /* Slightly below loading overlay if both were to show */
+            color: white;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        
+        .error-overlay.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .error-content {
+            text-align: center;
+            max-width: 500px;
+            padding: 2rem;
+        }
+        
+        .error-title {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 1rem;
+            color: #e57373;
+        }
+        
+        .error-text {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .retry-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .retry-btn:hover {
+            background: linear-gradient(135deg, #29b6f6 0%, #0288d1 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 195, 247, 0.4);
+        }
     </style>
 </head>
 <body>
-    <a-scene background="color: #ECECEC" cursor="rayOrigin: mouse; fuse: false" raycaster="objects: .clickable">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay"> <!-- Start hidden by default -->
+        <div class="loading-content">
+            <h1 class="loading-title">MODSiVR</h1>
+            <div class="loading-spinner"></div>
+            <p class="loading-text">A carregar dados da sala <span id="currentRoomDisplay"></span>.</p>
+            <p class="loading-text" id="roomInfo" style="font-size: 0.9rem; opacity: 0.7;"></p>
+        </div>
+    </div>
+
+    <!-- Error Overlay -->
+    <div class="error-overlay" id="errorOverlay">
+        <div class="error-content">
+            <h1 class="error-title">Erro</h1>
+            <p class="error-text" id="errorMessage">Falha ao carregar os dados da sala</p>
+            <button class="retry-btn" onclick="retryConnection()">Tentar Novamente</button>
+            <button class="retry-btn" id="closeErrorAndEnterBtn" style="margin-top: 10px; background-color: #546e7a;">Entrar no Ambiente</button>
+        </div>
+    </div>
+
+    <a-scene background="color: #ECECEC">
         <a-entity environment="preset: default; groundColor: #445; groundTexture: walk;"></a-entity>
         
         <a-assets>
             <a-asset-item id="optimerBoldFont" src="https://rawgit.com/mrdoob/three.js/dev/examples/fonts/optimer_bold.typeface.json"></a-asset-item>
         </a-assets>
-
-        <!-- Loading indicator -->
-        <a-entity id="loading-indicator" position="0 3 -5" visible="false">
-            <a-text value="Carregando dados..." align="center" color="#FFFFFF" width="8"></a-text>
-            <a-text id="room-info-text" value="" position="0 -1 0" align="center" color="#CCCCCC" width="6"></a-text>
-        </a-entity>
-
-        <!-- Error indicator -->
-        <a-entity id="error-indicator" position="0 3 -5" visible="false">
-            <a-text id="error-main-text" value="O carregamento da sala falhou" align="center" color="#FF6B6B" width="10"></a-text>
-            <a-text id="error-sub-text" value="Verifique o código da sala e tente novamente" position="0 -1.5 0" align="center" color="#FFAA5A" width="8"></a-text>
-            <a-text id="retry-text" value="Clique aqui para tentar novamente" position="0 -3 0" align="center" color="#4CAF50" width="7" class="clickable" visible="false"></a-text>
-        </a-entity>
 
         <!-- Ponto de inserção de gráficos -->
         <a-entity id="charts-root"></a-entity>
@@ -233,233 +382,252 @@
         <!-- Câmera -->
         <a-entity movement-controls="fly: true" position="-3 5 20">
             <a-entity camera position="0 0 0" look-controls></a-entity>
-            <!-- Removed cursor from camera, handled by scene's cursor component -->
-            <a-entity laser-controls="hand: right" raycaster="objects: .clickable"></a-entity>
+            <a-entity cursor="rayOrigin:mouse" raycaster></a-entity>
+            <a-entity laser-controls="hand: right"></a-entity>
         </a-entity>
     </a-scene>
 
     <!-- Room Selector UI -->
-    <div class="room-selector" id="roomSelectorUI">
+    <div class="room-selector hidden" id="roomSelector"> <!-- Start hidden, shown by JS logic -->
         <button class="minimize-btn" id="minimizeBtn">−</button>
-        <div class="collapsed-indicator">Sala: <span id="currentRoomDisplay">LD5RU</span></div>
         <div class="room-content">
-            <h3>🏠 Seletor de Sala</h3>
+            <h3>
+                <svg class="room-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+                Seletor de Sala
+            </h3>
             <div class="room-input-group">
-                <input type="text" class="room-input" id="roomCodeInput" placeholder="Código da sala (ex: LD5RU)" maxlength="10">
-                <button class="room-btn" id="connectRoomBtn">Conectar</button>
+                <input type="text" class="room-input" id="roomInput" placeholder="Código da sala (ex: LD5RU)" maxlength="10">
+                <button class="room-btn" id="connectBtn">Conectar</button>
             </div>
-            <div class="room-status" id="roomStatusMessage" style="display: none;"></div>
+            <div class="room-status" id="roomStatus" style="display: none;"></div>
         </div>
     </div>
 
     <script>
-        const chartsRoot = document.getElementById('charts-root');
-        const loadingIndicatorEl = document.getElementById('loading-indicator');
-        const errorIndicatorEl = document.getElementById('error-indicator');
-        const retryTextEl = document.getElementById('retry-text');
-
-        // Room selector UI elements
-        const roomSelectorUI = document.getElementById('roomSelectorUI');
-        const roomCodeInput = document.getElementById('roomCodeInput');
-        const connectRoomBtn = document.getElementById('connectRoomBtn');
-        const roomStatusMessage = document.getElementById('roomStatusMessage');
+        const root = document.getElementById('charts-root');
+        
+        // UI elements
+        const roomSelector = document.getElementById('roomSelector');
+        const roomInput = document.getElementById('roomInput');
+        const connectBtn = document.getElementById('connectBtn');
+        const roomStatus = document.getElementById('roomStatus');
         const minimizeBtn = document.getElementById('minimizeBtn');
         const currentRoomDisplay = document.getElementById('currentRoomDisplay');
-        const roomInfoTextEl = document.getElementById('room-info-text');
-        const errorMainTextEl = document.getElementById('error-main-text');
-        const errorSubTextEl = document.getElementById('error-sub-text');
-
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const errorOverlay = document.getElementById('errorOverlay');
+        const errorMessage = document.getElementById('errorMessage');
+        const roomInfo = document.getElementById('roomInfo'); // For loading screen
 
         // API Configuration
         const API_BASE_URL = 'https://modsi-api-ffhhfgecfdehhscv.spaincentral-01.azurewebsites.net/api/Room/Get/';
         const API_CODE = 'z4tKbNFdaaXzHZ4ayn9pRQokNWYgRkbVkCjOxTxP-8ChAzFuMigGCw==';
         
-        let currentRoom = 'LD5RU'; // Default room
-        let isUIVisible = true;
-        let isUICollapsed = false;
+        let currentRoom = 'LD5RU'; // Default active room / context
+        let isCollapsed = false;
         
-        // Function to get room from URL parameters or use default
-        function getRoomFromURL() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const roomParam = urlParams.get('room');
-            if (roomParam) return roomParam.toUpperCase();
-            
-            const hash = window.location.hash.substring(1);
-            const hashParams = new URLSearchParams(hash);
-            const roomHash = hashParams.get('room');
-            if (roomHash) return roomHash.toUpperCase();
-            
-            return 'LD5RU'; // Default fallback
-        }
-        
-        function buildAPIURL(room) {
-            return `${API_BASE_URL}${room}?code=${API_CODE}`;
+        // Function to synchronize UI elements that display the room name
+        function syncRoomUI(roomName) {
+            const display = roomName || 'N/A';
+            roomInput.value = display; // Update input field
+            currentRoomDisplay.textContent = display; // Update collapsed view
+            // roomInfo (loading screen text) is updated directly by showLoading
         }
 
-        // --- Room Selector UI Functions ---
-        function showRoomStatus(message, type) {
-            let fullMessage = message;
-            if (type === 'loading') {
-                fullMessage = `<span class="spinner"></span> ${message}`;
-                roomStatusMessage.innerHTML = fullMessage;
-            } else {
-                roomStatusMessage.textContent = message;
+        // Function to handle URL parameter, normalize URL if 'code' is present
+        function getRoomFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let room = urlParams.get('room');
+            const codeParam = urlParams.get('code');
+
+            if (codeParam) {
+                console.log(`Parâmetro 'code' (${codeParam}) encontrado, usando como 'room'.`);
+                room = codeParam.toUpperCase();
+                urlParams.delete('code');
+                urlParams.set('room', room);
+                const newQueryString = urlParams.toString();
+                const currentSearch = window.location.search.substring(1);
+                // Only update URL if it actually changes to avoid history spam
+                if (currentSearch !== newQueryString) {
+                    window.history.replaceState({}, '', `${window.location.pathname}?${newQueryString}${window.location.hash}`);
+                    console.log('URL atualizada para usar parâmetro "room".');
+                }
+            } else if (room) {
+                room = room.toUpperCase();
             }
-            roomStatusMessage.className = `room-status ${type}`;
-            roomStatusMessage.style.display = 'flex'; // Use flex for spinner alignment
+            
+            if (!room) {
+                const hash = window.location.hash.substring(1);
+                const hashParams = new URLSearchParams(hash);
+                room = hashParams.get('room');
+                if (room) {
+                    room = room.toUpperCase();
+                    console.log(`Parâmetro 'room' (${room}) encontrado no hash.`);
+                }
+            }
+            
+            return room || null; // Return uppercase room ID or null
+        }
+        
+        // Build API URL with room parameter
+        function buildAPIURL(roomCode) {
+            return `${API_BASE_URL}${roomCode}?code=${API_CODE}`;
+        }
+
+        // Room selector functionality
+        function showRoomStatus(message, type) {
+            roomStatus.textContent = message;
+            roomStatus.className = `room-status ${type}`;
+            roomStatus.style.display = 'block';
             
             if (type !== 'loading') {
                 setTimeout(() => {
-                    // Only hide if the status hasn't changed (e.g. from error to new loading)
-                    if (roomStatusMessage.classList.contains(type)) {
-                         roomStatusMessage.style.display = 'none';
-                    }
-                }, 5000);
+                    roomStatus.style.display = 'none';
+                }, 3000);
             }
         }
 
-        function updateCurrentRoomDisplayInUI(room) {
-            currentRoomDisplay.textContent = room;
-            roomCodeInput.value = room; // Keep input in sync
+        function toggleRoomSelector() {
+            isCollapsed = !isCollapsed;
+            roomSelector.classList.toggle('collapsed', isCollapsed);
+            minimizeBtn.textContent = isCollapsed ? '+' : '−';
         }
 
-        function toggleUIMinimize() {
-            isUICollapsed = !isUICollapsed;
-            roomSelectorUI.classList.toggle('collapsed', isUICollapsed);
-            minimizeBtn.textContent = isUICollapsed ? '+' : '−';
+        function hideRoomSelector() {
+            roomSelector.classList.add('hidden');
         }
 
-        function hideRoomSelectorHTMLUI() {
-            if (!isUIVisible) return;
-            roomSelectorUI.classList.add('hidden');
-            isUIVisible = false;
+        function showRoomSelector() {
+            roomSelector.classList.remove('hidden');
         }
 
-        function showRoomSelectorHTMLUI() {
-            if (isUIVisible && !roomSelectorUI.classList.contains('hidden')) return;
-            roomSelectorUI.classList.remove('hidden');
-            isUIVisible = true;
+        // Show/hide overlays
+        function showLoading(show, roomNameForDisplay = null) {
+            const displayRoom = roomNameForDisplay || currentRoom;
+            if (show) {
+                roomInfo.textContent = 'Por favor aguarde...';
+                loadingOverlay.classList.remove('hidden');
+            } else {
+                loadingOverlay.classList.add('hidden');
+            }
+        }
+
+        function showError(show, message = 'Erro ao carregar dados') {
+            if (show) {
+                errorMessage.textContent = message;
+                errorOverlay.classList.add('visible');
+            } else {
+                errorOverlay.classList.remove('visible');
+            }
         }
         
-        minimizeBtn.addEventListener('click', toggleUIMinimize);
-        roomSelectorUI.addEventListener('click', (e) => {
-            if (isUICollapsed && (e.target === roomSelectorUI || e.target === currentRoomDisplay || e.target.parentNode === currentRoomDisplay)) {
-                toggleUIMinimize();
+        function closeErrorAndEnterEnvironment() {
+            showError(false);
+            showLoading(false); // Ensure loading is also hidden
+            clearCharts();      // Clean up any partially rendered things
+            showRoomSelector(); // Make selector available
+            syncRoomUI(currentRoom); // Ensure UI reflects the room that failed, or default
+            console.log("Error overlay closed. Entering environment with room selector. Context room: " + currentRoom);
+        }
+
+        function retryConnection() {
+            showError(false);
+            // initializeApp will use currentRoom, which should be the room that failed or from URL
+            initializeApp(true); // true to attempt loading (which will use currentRoom)
+        }
+
+        // Event listeners for room selector
+        minimizeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleRoomSelector();
+        });
+
+        roomSelector.addEventListener('click', (e) => {
+            if (isCollapsed && e.target === roomSelector) {
+                toggleRoomSelector();
             }
         });
 
-        connectRoomBtn.addEventListener('click', () => {
-            const newRoom = roomCodeInput.value.trim().toUpperCase();
-            if (newRoom && newRoom !== currentRoom) {
+        connectBtn.addEventListener('click', () => {
+            const newRoom = roomInput.value.trim().toUpperCase();
+            if (newRoom) {
                 connectToRoom(newRoom);
-            } else if (newRoom === currentRoom) {
-                showRoomStatus('Já conectado a esta sala.', 'loading'); // Use loading style for info
-                 setTimeout(() => showRoomStatus('', ''), 100); // Clear quickly
-            } else if (!newRoom) {
+            } else {
                 showRoomStatus('Por favor, insira um código de sala.', 'error');
             }
         });
 
-        roomCodeInput.addEventListener('keypress', (e) => {
+        roomInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                connectRoomBtn.click();
+                connectBtn.click();
             }
         });
 
-        async function connectToRoom(room) {
-            connectRoomBtn.disabled = true;
-            roomCodeInput.disabled = true;
-            const originalButtonText = connectRoomBtn.textContent;
-            connectRoomBtn.innerHTML = '<span class="spinner"></span> Conectando';
+        async function connectToRoom(newRoomCode) {
+            if (!newRoomCode) {
+                 showRoomStatus('Código da sala não pode ser vazio.', 'error');
+                 return;
+            }
+            // If trying to connect to the same room and it's already loaded without error,
+            // you might want to provide feedback or skip. For now, allow re-connection.
+            // if (newRoomCode === currentRoom && !errorOverlay.classList.contains('visible')) {
+            //    showRoomStatus('Já conectado a esta sala. Recarregando...', 'success');
+            // }
 
-            showRoomStatus(`Conectando à sala ${room}...`, 'loading');
-            
-            const newUrl = new URL(window.location);
-            newUrl.searchParams.set('room', room);
-            window.history.pushState({ room: room }, '', newUrl);
-            
-            currentRoom = room; // Update global currentRoom
+            currentRoom = newRoomCode; // Set the target room globally
+            syncRoomUI(currentRoom);   // Update UI to reflect this new target
 
-            const success = await initializeApp(); // initializeApp will use 'currentRoom'
+            // Update URL first so initializeApp can pick it up if needed (though we pass currentRoom)
+            const url = new URL(window.location);
+            url.searchParams.set('room', currentRoom);
+            url.searchParams.delete('code'); // Clean up 'code' if 'room' is being explicitly set
+            window.history.pushState({}, '', url.toString());
 
-            connectRoomBtn.disabled = false;
-            roomCodeInput.disabled = false;
-            connectRoomBtn.innerHTML = originalButtonText; // Restore button text
+            showRoomStatus(`Conectando à sala ${currentRoom}...`, 'loading');
+            connectBtn.disabled = true;
 
-            if (success) {
-                updateCurrentRoomDisplayInUI(room);
-                // showRoomStatus(`Conectado: ${room}`, 'success'); // initializeApp handles this
+            await initializeApp(true); // true: attempt to load the (now current) room
+
+            // After initializeApp completes, check its outcome
+            if (!errorOverlay.classList.contains('visible')) {
+                showRoomStatus(`Conectado à sala ${currentRoom} com sucesso!`, 'success');
             } else {
-                // showRoomStatus(`Falha ao conectar: ${room}`, 'error'); // initializeApp handles this
-                if (isUICollapsed) toggleUIMinimize();
-                showRoomSelectorHTMLUI();
-                roomCodeInput.focus();
+                // Error message is already on errorOverlay
+                showRoomStatus(`Falha ao carregar sala ${currentRoom}.`, 'error');
             }
+            
+            connectBtn.disabled = false;
+            // Fullscreen/VR handlers will manage roomSelector visibility
         }
 
-        // --- Fullscreen/VR UI Hiding ---
-        function handleModeChange(isImmersive) {
-            if (isImmersive) {
-                hideRoomSelectorHTMLUI();
+        // Detect fullscreen/VR mode to hide UI
+        function handleFullscreenChange() {
+            const isFullscreen = document.fullscreenElement || 
+                                document.webkitFullscreenElement || 
+                                document.mozFullScreenElement || 
+                                document.msFullscreenElement;
+            
+            if (isFullscreen || document.querySelector('a-scene').is('vr-mode')) {
+                hideRoomSelector();
             } else {
-                showRoomSelectorHTMLUI();
-            }
-        }
-        document.addEventListener('fullscreenchange', () => handleModeChange(!!document.fullscreenElement));
-        document.addEventListener('webkitfullscreenchange', () => handleModeChange(!!document.webkitFullscreenElement));
-        document.addEventListener('mozfullscreenchange', () => handleModeChange(!!document.mozFullScreenElement));
-        document.addEventListener('MSFullscreenChange', () => handleModeChange(!!document.msFullscreenElement));
-        
-        const sceneEl = document.querySelector('a-scene');
-        sceneEl.addEventListener('enter-vr', () => handleModeChange(true));
-        sceneEl.addEventListener('exit-vr', () => handleModeChange(false));
-
-
-        // --- A-Frame Indicator Functions ---
-        function showLoadingIndicator(show, roomName = '') {
-            loadingIndicatorEl.setAttribute('visible', show);
-            if (show) {
-                roomInfoTextEl.setAttribute('value', roomName ? `Sala: ${roomName}` : 'Carregando...');
+                showRoomSelector();
             }
         }
 
-        function showErrorIndicator(show, mainMsg, subMsg, showRetryOpt) {
-            errorIndicatorEl.setAttribute('visible', show);
-            if (show) {
-                errorMainTextEl.setAttribute('value', mainMsg);
-                errorSubTextEl.setAttribute('value', subMsg);
-                retryTextEl.setAttribute('visible', showRetryOpt);
-                if (showRetryOpt) {
-                    // Clone and replace to remove old listeners and ensure it's fresh
-                    const newRetryText = retryTextEl.cloneNode(true);
-                    newRetryText.setAttribute('value', "Clique aqui para tentar novamente");
-                    retryTextEl.parentNode.replaceChild(newRetryText, retryTextEl);
-                    newRetryText.addEventListener('click', handleClickRetryAFRAME, { once: true });
-                    // Update global reference if needed, or always query by ID
-                    // retryTextEl = newRetryText; // This won't work as retryTextEl is const
-                }
-            }
-        }
-        
-        function handleClickRetryAFRAME() {
-            document.getElementById('retry-text').setAttribute('value', "Tentando novamente...");
-            initializeApp();
-        }
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 
-        // --- Chart Logic (from user's second script block) ---
+        document.querySelector('a-scene').addEventListener('enter-vr', hideRoomSelector);
+        document.querySelector('a-scene').addEventListener('exit-vr', showRoomSelector);
+
+
         const POSITION_CONFIG = { startX: -18, baseY: 1.5, baseZ: 12, spacingX: 12, pieOffsetY: 3 };
-        const TIME_TYPES = {
-            'years': { label: 'Anos', next: 'months' },
-            'months': { label: 'Meses', next: 'days' },
-            'days': { label: 'Dias', next: 'years' }
-        };
-        const JSON_TIME_MAPPING = {
-            'Year': 'years', 'Month': 'months', 'Day': 'days',
-            'year': 'years', 'month': 'months', 'day': 'days',
-            'years': 'years', 'months': 'months', 'days': 'days'
-        };
+        const TIME_TYPES = { 'years': { label: 'Anos', next: 'months' }, 'months': { label: 'Meses', next: 'days' }, 'days': { label: 'Dias', next: 'years' } };
+        const JSON_TIME_MAPPING = { 'Year': 'years', 'Month': 'months', 'Day': 'days', 'year': 'years', 'month': 'months', 'day': 'days', 'years': 'years', 'months': 'months', 'days': 'days' };
         let chartsData = [];
-        let configurationsData = null;
         let chartStates = {};
 
         function processKPIData(kpihistory, targetKPIId, timeAxisType, valueType = 'NewValue_1') {
@@ -477,8 +645,7 @@
             });
             const finalData = [];
             Object.keys(dataByTimeKey).sort().forEach(timeKey => {
-                const sortedItems = dataByTimeKey[timeKey].sort((a, b) => b.parsedDate - a.parsedDate);
-                const mostRecent = sortedItems[0];
+                const mostRecent = dataByTimeKey[timeKey].sort((a, b) => b.parsedDate - a.parsedDate)[0];
                 const value = valueType === 'NewValue_2' ? mostRecent.NewValue_2 : mostRecent.NewValue_1;
                 finalData.push({ key: timeKey, height: parseFloat(value) || 0 });
             });
@@ -486,99 +653,86 @@
         }
 
         function processPieData(kpihistory, targetKPIId, timeAxisType, valueType = 'NewValue_1') {
-            const baseData = processKPIData(kpihistory, targetKPIId, timeAxisType, valueType);
-            return baseData.map(item => ({ key: item.key, size: item.height }));
+            return processKPIData(kpihistory, targetKPIId, timeAxisType, valueType).map(item => ({ key: item.key, size: item.height }));
         }
 
         function hasValidData(kpihistory, targetKPIId, valueType) {
-            const kpiData = kpihistory.filter(item => item.KPIId == targetKPIId);
-            return kpiData.some(item => {
-                const value = valueType === 'NewValue_2' ? item.NewValue_2 : item.NewValue_1;
-                return value != null && value !== undefined && parseFloat(value) !== 0;
-            });
+            return kpihistory.filter(item => item.KPIId == targetKPIId)
+                             .some(item => (valueType === 'NewValue_2' ? item.NewValue_2 : item.NewValue_1) != null && parseFloat(valueType === 'NewValue_2' ? item.NewValue_2 : item.NewValue_1) !== 0);
         }
 
         function calculatePosition(chartIndex, isPieChart = false) {
             const x = POSITION_CONFIG.startX + (chartIndex * POSITION_CONFIG.spacingX);
             const y = POSITION_CONFIG.baseY + (isPieChart ? POSITION_CONFIG.pieOffsetY : 0);
-            const z = POSITION_CONFIG.baseZ;
-            return `${x} ${y} ${z}`;
+            return `${x} ${y} ${POSITION_CONFIG.baseZ}`;
         }
 
         function toggleChartValue(chartIndex) {
-            const state = chartStates[chartIndex];
-            if (!state) return;
-            state.valueType = state.valueType === 'NewValue_1' ? 'NewValue_2' : 'NewValue_1';
+            chartStates[chartIndex].valueType = chartStates[chartIndex].valueType === 'NewValue_1' ? 'NewValue_2' : 'NewValue_1';
             renderSingleChart(chartIndex);
         }
 
         function toggleChartTimeType(chartIndex) {
-            const state = chartStates[chartIndex];
-             if (!state) return;
-            state.timeType = TIME_TYPES[state.timeType].next;
+            chartStates[chartIndex].timeType = TIME_TYPES[chartStates[chartIndex].timeType].next;
             renderSingleChart(chartIndex);
         }
-        
-        function renderSingleChart(chartIndex) {
-            const chartConfig = chartsData.find(c => c.originalIndex === chartIndex); // Find by original index
-            const state = chartStates[chartIndex];
-            if (!chartConfig || !state) {
-                console.warn("Chart config or state not found for index:", chartIndex);
-                return;
-            }
 
-            const existingChart = chartsRoot.querySelector(`[data-chart-original-index="${chartIndex}"]`);
-            const existingButtons = chartsRoot.querySelector(`[data-buttons-original-index="${chartIndex}"]`);
+        function renderSingleChart(chartIndex) {
+            const chartConfig = chartsData[chartIndex];
+            const state = chartStates[chartIndex];
+            if (!chartConfig || !state) return;
+
+            const existingChart = root.querySelector(`[data-chart-index="${chartIndex}"]`);
+            const existingButtons = root.querySelector(`[data-buttons-index="${chartIndex}"]`);
 
             if (existingChart) {
-                if (chartConfig.chart.chartType === "pizza") {
-                    if (existingChart.components && existingChart.components['babia-pie']) {
-                        existingChart.removeAttribute('babia-pie'); // Important for babia components
-                    }
+                if (chartConfig.chart.chartType === "pizza" && existingChart.components && existingChart.components['babia-pie']) {
+                    existingChart.removeAttribute('babia-pie'); // Deregister component
                 }
-                 // Generic removal after a short delay if needed, or direct
+                // Delay removal slightly for component deregistration
                 setTimeout(() => {
                     if (existingChart.parentNode) existingChart.parentNode.removeChild(existingChart);
-                }, 10); // Small delay for component cleanup
+                    if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
+                    
+                    // Re-create after removal
+                    const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType);
+                    root.appendChild(chartEl);
+                    const buttonsEl = createChartButtons(chartIndex, state);
+                    root.appendChild(buttonsEl);
+                }, 50);
+            } else { // If somehow no existing chart, just create new
+                 if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
+                 const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType);
+                 root.appendChild(chartEl);
+                 const buttonsEl = createChartButtons(chartIndex, state);
+                 root.appendChild(buttonsEl);
             }
-            if (existingButtons && existingButtons.parentNode) {
-                existingButtons.parentNode.removeChild(existingButtons);
-            }
-            
-            // Re-create after a delay
-            setTimeout(() => {
-                const chartEl = createChart(chartConfig, chartConfig.displayIndex, state.valueType, state.timeType); // Use displayIndex for positioning
-                chartsRoot.appendChild(chartEl);
-                const buttonsEl = createChartButtons(chartConfig.originalIndex, chartConfig.displayIndex, state); // Pass originalIndex for state, displayIndex for pos
-                chartsRoot.appendChild(buttonsEl);
-            }, 50);
         }
-
-        function createChartButtons(originalChartIndex, displayChartIndex, state) {
-            const chartConfig = chartsData.find(c => c.originalIndex === originalChartIndex);
-            if (!chartConfig) return document.createElement('a-entity'); // Return empty if no config
-
-            const position = calculatePosition(displayChartIndex, false);
+        
+        function createChartButtons(chartIndex, state) {
+            const chartConfig = chartsData[chartIndex];
+            const position = calculatePosition(chartIndex, false);
             const [x, y, z] = position.split(' ').map(parseFloat);
             const kpiId = parseInt(chartConfig.chart.zAxis);
             const hasValue1 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1');
             const hasValue2 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2');
-            const hasBothValues = hasValue1 && hasValue2;
             
             const buttonsContainer = document.createElement('a-entity');
-            buttonsContainer.setAttribute('position', `${x + 6} ${y + 8} ${z}`);
-            buttonsContainer.setAttribute('data-buttons-original-index', originalChartIndex);
+            buttonsContainer.setAttribute('position', `${x + 6} ${parseFloat(y) + 8} ${z}`); // Ensure y is float
+            buttonsContainer.setAttribute('data-buttons-index', chartIndex);
             let buttonVerticalOffset = 0;
 
-            if (hasBothValues) {
+            if (hasValue1 && hasValue2) {
                 const valueButton = document.createElement('a-entity');
-                const valueLabel = state.valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2';
                 valueButton.setAttribute('geometry', 'primitive: box; width: 2.5; height: 0.8; depth: 0.1');
                 valueButton.setAttribute('material', `color: ${state.valueType === 'NewValue_1' ? '#4CAF50' : '#FF9800'}`);
                 valueButton.setAttribute('position', `0 ${buttonVerticalOffset} 0`);
-                valueButton.innerHTML = `<a-text value="${valueLabel}" position="0 0 0.06" align="center" color="white" width="4"></a-text>`;
-                valueButton.classList.add('clickable');
-                valueButton.addEventListener('click', (e) => { e.stopPropagation(); setTimeout(() => toggleChartValue(originalChartIndex), 50); });
+                const valueText = document.createElement('a-text');
+                valueText.setAttribute('value', state.valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2');
+                valueText.setAttribute('position', '0 0 0.06'); valueText.setAttribute('align', 'center'); valueText.setAttribute('color', 'white'); valueText.setAttribute('width', '4');
+                valueButton.appendChild(valueText);
+                valueButton.setAttribute('class', 'clickable');
+                valueButton.addEventListener('click', (event) => { event.stopPropagation(); setTimeout(() => toggleChartValue(chartIndex), 100); });
                 buttonsContainer.appendChild(valueButton);
                 buttonVerticalOffset -= 1.2;
             }
@@ -587,187 +741,192 @@
             timeButton.setAttribute('geometry', 'primitive: box; width: 2.5; height: 0.8; depth: 0.1');
             timeButton.setAttribute('material', 'color: #2196F3');
             timeButton.setAttribute('position', `0 ${buttonVerticalOffset} 0`);
-            timeButton.innerHTML = `<a-text value="${TIME_TYPES[state.timeType].label}" position="0 0 0.06" align="center" color="white" width="4"></a-text>`;
-            timeButton.classList.add('clickable');
-            timeButton.addEventListener('click', (e) => { e.stopPropagation(); setTimeout(() => toggleChartTimeType(originalChartIndex), 50); });
+            const timeText = document.createElement('a-text');
+            timeText.setAttribute('value', TIME_TYPES[state.timeType].label);
+            timeText.setAttribute('position', '0 0 0.06'); timeText.setAttribute('align', 'center'); timeText.setAttribute('color', 'white'); timeText.setAttribute('width', '4');
+            timeButton.appendChild(timeText);
+            timeButton.setAttribute('class', 'clickable');
+            timeButton.addEventListener('click', (event) => { event.stopPropagation(); setTimeout(() => toggleChartTimeType(chartIndex), 100); });
             buttonsContainer.appendChild(timeButton);
             return buttonsContainer;
         }
 
-        function createChart(chartConfig, displayChartIndex, valueType, timeType = 'years') {
-            const { kpihistory, chart, originalIndex } = chartConfig;
+        function createChart(chartConfigData, chartIndex, valueType, timeType = 'years') {
+            const { kpihistory, chart } = chartConfigData;
             const kpiId = parseInt(chart.zAxis);
             const chartContainer = document.createElement('a-entity');
             const isPieChart = chart.chartType === "pizza";
-            chartContainer.setAttribute('position', calculatePosition(displayChartIndex, isPieChart));
-            chartContainer.setAttribute('data-chart-original-index', originalIndex); // Store original index
-            
+            chartContainer.setAttribute('position', calculatePosition(chartIndex, isPieChart));
+            chartContainer.setAttribute('data-chart-index', chartIndex);
             const palette = valueType === 'NewValue_1' ? 'commerce' : 'ubuntu';
             const productName = valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2';
             const timeLabel = TIME_TYPES[timeType].label;
-            const chartTitle = `${chart.graphname} (${productName} - ${timeLabel})`;
 
             if (chart.chartType === "barras") {
-                const data = processKPIData(kpihistory, kpiId, timeType, valueType);
-                chartContainer.setAttribute('babia-bars', `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: true; title: ${chartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 2 12 0; heightMax: 800; x_axis: key; height: height; data: ${JSON.stringify(data)}; showInfo: true; showInfoColor: #FFFFFF`);
+                const chartData = processKPIData(kpihistory, kpiId, timeType, valueType);
+                const babiaConfig = `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: true; title: ${chart.graphname} (${productName} - ${timeLabel}); titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 2 12 0; heightMax: 800; x_axis: key; height: height; data: ${JSON.stringify(chartData)}; showInfo: true; showInfoColor: #FFFFFF`;
+                chartContainer.setAttribute('babia-bars', babiaConfig);
             } else if (chart.chartType === "pizza") {
-                let data = processPieData(kpihistory, kpiId, timeType, valueType);
-                if (data.length === 0 || data.every(item => item.size === 0)) {
-                    data = [{ key: 'Sem Dados', size: 1 }];
-                }
+                let pieData = processPieData(kpihistory, kpiId, timeType, valueType);
+                if (pieData.length === 0 || pieData.every(item => item.size === 0)) pieData = [{ key: 'Sem Dados', size: 1 }];
                 const titleEl = document.createElement('a-text');
-                titleEl.setAttribute('value', chartTitle);
-                titleEl.setAttribute('position', '1 6 0');
-                titleEl.setAttribute('align', 'center');
-                titleEl.setAttribute('color', '#FFFFFF');
-                titleEl.setAttribute('width', '8');
+                titleEl.setAttribute('value', `${chart.graphname} (${productName} - ${timeLabel})`);
+                titleEl.setAttribute('position', '1 6 0'); titleEl.setAttribute('align', 'center'); titleEl.setAttribute('color', '#FFFFFF'); titleEl.setAttribute('width', '8');
                 chartContainer.appendChild(titleEl);
-                
                 const pieEl = document.createElement('a-entity');
-                pieEl.setAttribute('babia-pie', `legend: true; palette: ${palette}; animation: false; key: key; size: size; data: ${JSON.stringify(data)}; showInfo: true; showInfoColor: #FFFFFF`);
-                pieEl.setAttribute('rotation', '90 0 0');
-                pieEl.setAttribute('scale', '1.8 1.8 1.8');
+                const pieConfig = `legend: true; palette: ${palette}; animation: true; key: key; size: size; data: ${JSON.stringify(pieData)}; showInfo: true; showInfoColor: #FFFFFF`;
+                pieEl.setAttribute('babia-pie', pieConfig);
+                pieEl.setAttribute('rotation', '90 0 0'); pieEl.setAttribute('scale', '1.8 1.8 1.8');
                 chartContainer.appendChild(pieEl);
             }
             return chartContainer;
         }
 
         function clearCharts() {
-            while (chartsRoot.firstChild) {
-                chartsRoot.removeChild(chartsRoot.firstChild);
-            }
+            while (root.firstChild) root.removeChild(root.firstChild);
+            chartsData = []; // Also clear the data array
+            chartStates = {};
         }
-        
+
         function getDefaultTimeType(chart) {
-            const checkProps = ['xAxis', 'timeUnit', 'xAxisUnit', 'temporalUnit'];
-            for (const prop of checkProps) {
-                if (chart[prop]) {
-                    const mappedType = JSON_TIME_MAPPING[chart[prop]];
-                    if (mappedType) return mappedType;
-                }
-            }
-            return 'years';
+            const timeUnit = chart.xAxis || chart.timeUnit || chart.xAxisUnit || chart.temporalUnit;
+            return JSON_TIME_MAPPING[timeUnit] || 'years';
         }
 
         function initializeChartStates() {
             chartStates = {};
-            chartsData.forEach((chartConfig) => { // Use chartConfig.originalIndex
-                const originalIndex = chartConfig.originalIndex;
-                const defaultTimeType = getDefaultTimeType(chartConfig.chart);
+            chartsData.forEach((chartConfig, index) => {
                 const kpiId = parseInt(chartConfig.chart.zAxis);
                 const hasValue1 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1');
                 const hasValue2 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2');
-                let defaultValueType = (hasValue1 || !hasValue2) ? 'NewValue_1' : 'NewValue_2';
-                chartStates[originalIndex] = { valueType: defaultValueType, timeType: defaultTimeType };
+                let defaultValueType = 'NewValue_1';
+                if (!hasValue1 && hasValue2) defaultValueType = 'NewValue_2';
+                chartStates[index] = { valueType: defaultValueType, timeType: getDefaultTimeType(chartConfig.chart) };
             });
         }
 
         function renderAllCharts() {
-            clearCharts();
-            let displayIndex = 0;
-            chartsData.forEach((chartConfig) => {
-                const { kpihistory, chart, originalIndex } = chartConfig;
+            // Clear existing before rendering all, root node is used
+            while (root.firstChild) {
+                root.removeChild(root.firstChild);
+            }
+            
+            let visibleChartIndex = 0; // To manage layout if some charts are skipped
+            chartsData.forEach((chartConfig, originalIndex) => {
+                const { kpihistory, chart } = chartConfig;
                 const kpiId = parseInt(chart.zAxis);
                 if (hasValidData(kpihistory, kpiId, 'NewValue_1') || hasValidData(kpihistory, kpiId, 'NewValue_2')) {
                     const state = chartStates[originalIndex];
-                    // Auto-switch value type if current one has no data but other does
-                    if (state.valueType === 'NewValue_1' && !hasValidData(kpihistory, kpiId, 'NewValue_1') && hasValidData(kpihistory, kpiId, 'NewValue_2')) {
-                        state.valueType = 'NewValue_2';
-                    } else if (state.valueType === 'NewValue_2' && !hasValidData(kpihistory, kpiId, 'NewValue_2') && hasValidData(kpihistory, kpiId, 'NewValue_1')) {
-                        state.valueType = 'NewValue_1';
-                    }
-                    chartConfig.displayIndex = displayIndex; // Store display index for positioning
-                    const chartEl = createChart(chartConfig, displayIndex, state.valueType, state.timeType);
-                    chartsRoot.appendChild(chartEl);
-                    const buttonsEl = createChartButtons(originalIndex, displayIndex, state);
-                    chartsRoot.appendChild(buttonsEl);
-                    displayIndex++;
+                    const el = createChart(chartConfig, visibleChartIndex, state.valueType, state.timeType);
+                    root.appendChild(el);
+                    const buttonsEl = createChartButtons(visibleChartIndex, state);
+                    root.appendChild(buttonsEl);
+                    visibleChartIndex++;
                 }
             });
         }
 
-        async function fetchDataFromAPI(room, retries = 2) { // Reduced retries for faster feedback
-            const apiUrl = buildAPIURL(room);
-            console.log(`Fetching data from API: ${apiUrl}`);
+        async function fetchDataFromAPI(roomCode, retries = 3) {
+            const apiUrl = buildAPIURL(roomCode);
+            console.log(`Fetching data from: ${apiUrl}`);
             for (let attempt = 1; attempt <= retries; attempt++) {
                 try {
-                    const response = await fetch(apiUrl, { headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }});
+                    const response = await fetch(apiUrl, { headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' } });
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
                     const data = await response.json();
-                    if (!Array.isArray(data) || data.length === 0 || !data[0].config || !data[0].config.kpihistory || !data[0].config.charts) {
-                        throw new Error('Formato de dados inválido ou vazio recebido da API.');
+                    if (!data) throw new Error('Nenhum dado recebido da API');
+                    // Validate specific structure: [ { "config": { "kpihistory": [], "charts": [] } } ]
+                    if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].config === 'object' &&
+                        Array.isArray(data[0].config.kpihistory) && Array.isArray(data[0].config.charts)) {
+                        return data; // Return the full array
                     }
-                    return data;
+                    throw new Error('Estrutura de dados da API inválida. Esperado: Array com [0].config.kpihistory e [0].config.charts.');
                 } catch (error) {
                     console.error(`Tentativa ${attempt} falhou: ${error.message}`);
                     if (attempt === retries) throw error;
-                    await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+                    await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
                 }
             }
         }
 
-        // --- Main Application Initialization ---
-        async function initializeApp() {
-            // currentRoom is already set by getRoomFromURL or connectToRoom
-            updateCurrentRoomDisplayInUI(currentRoom);
-            
-            showLoadingIndicator(true, currentRoom);
-            showErrorIndicator(false);
-            clearCharts();
-            showRoomStatus(`Carregando sala: ${currentRoom}...`, 'loading');
+        async function initializeApp(attemptLoadFromUrl = true) {
+            const roomFromUrl = getRoomFromURL(); // Normalizes URL if 'code' param was used
+            let roomToLoad = null;
 
-            try {
-                const apiData = await fetchDataFromAPI(currentRoom);
-                configurationsData = apiData;
-                chartsData = []; // Reset chartsData
-                let originalIdx = 0;
-                apiData.forEach(config => {
-                    config.config.charts.forEach(chart => {
-                        chartsData.push({ kpihistory: config.config.kpihistory, chart: chart, originalIndex: originalIdx++ });
+            if (attemptLoadFromUrl && roomFromUrl) {
+                roomToLoad = roomFromUrl;
+            }
+
+            if (roomToLoad) {
+                currentRoom = roomToLoad; // Update global current room *before* attempting to load
+                syncRoomUI(currentRoom);  // Update UI elements
+                showLoading(true, currentRoom); // Pass currentRoom for display text
+                showError(false);
+
+                try {
+                    console.log(`Initializing application for room: ${currentRoom}...`);
+                    const apiDataArray = await fetchDataFromAPI(currentRoom);
+                    
+                    // apiDataArray is [ { "name": ..., "config": { kpihistory: [], charts: [] } } ]
+                    const config = apiDataArray[0].config; 
+                    const kpihistoryFromConfig = config.kpihistory;
+                    const chartsFromConfig = config.charts;
+
+                    if (!kpihistoryFromConfig || !chartsFromConfig) { // Should be caught by fetchDataFromAPI
+                        throw new Error('Missing kpihistory or charts in API response config.');
+                    }
+                    
+                    chartsData = []; // Clear previous charts data
+                    chartsFromConfig.forEach(chart => {
+                        chartsData.push({
+                            kpihistory: kpihistoryFromConfig, // Common kpihistory
+                            chart: chart
+                        });
                     });
-                });
 
-                if (chartsData.length === 0) throw new Error('Nenhum gráfico encontrado nos dados da sala.');
-                
-                initializeChartStates();
-                renderAllCharts();
-                showLoadingIndicator(false);
-                showRoomStatus(`Conectado à sala: ${currentRoom}`, 'success');
-                console.log(`Aplicação inicializada para a sala: ${currentRoom}`);
-                return true; // Success
-            } catch (error) {
-                console.error('Falha ao inicializar aplicação:', error);
-                showLoadingIndicator(false);
-                showErrorIndicator(true, "O carregamento da sala falhou", `Erro: ${error.message}. Verifique o código e tente novamente.`, true);
-                showRoomStatus(`Falha: ${error.message}`, 'error');
-                return false; // Failure
+                    if (chartsData.length === 0) {
+                        console.warn('Nenhum gráfico encontrado nos dados para esta sala.');
+                        clearCharts(); // Ensure any old charts are gone
+                    } else {
+                        initializeChartStates();
+                        renderAllCharts();
+                    }
+
+                    setTimeout(() => showLoading(false), 500);
+                    showRoomSelector(); // Ensure room selector is visible
+                    console.log(`Application initialized successfully for room: ${currentRoom}`);
+
+                } catch (error) {
+                    console.error(`Falha ao inicializar para a sala ${currentRoom}:`, error);
+                    showLoading(false);
+                    showError(true, `Falha ao carregar dados da sala ${currentRoom}: ${error.message}`);
+                    showRoomSelector(); // Ensure selector is available for another attempt or choice
+                }
+            } else {
+                // No room from URL to load, or not attempting. Setup for manual selection.
+                // currentRoom retains its last value (e.g. default 'LD5RU' or last loaded/attempted)
+                syncRoomUI(currentRoom); // Ensure UI reflects current context (e.g. default)
+                showLoading(false);
+                showError(false);
+                clearCharts();      // Clear any pre-existing charts from a previous session if any
+                showRoomSelector(); // Make room selector visible
+                console.log("Nenhuma sala especificada na URL para carregamento automático, ou carregamento automático ignorado. Seletor de sala ativo. Sala de contexto: " + currentRoom);
             }
         }
 
-        // --- Initial Load ---
         window.addEventListener('load', () => {
-            currentRoom = getRoomFromURL(); // Initialize currentRoom from URL/default
-            roomCodeInput.value = currentRoom; // Set input field value
-            updateCurrentRoomDisplayInUI(currentRoom); // Set collapsed UI display
-
-            // Check if A-Frame scene is already loaded, otherwise wait
-            if (sceneEl.hasLoaded) {
-                initializeApp();
-            } else {
-                sceneEl.addEventListener('loaded', initializeApp, { once: true });
+            console.log('Page loaded, starting application...');
+            const closeBtn = document.getElementById('closeErrorAndEnterBtn');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closeErrorAndEnterEnvironment);
             }
+            syncRoomUI(currentRoom); // Initialize UI elements with the default room name
+            initializeApp(true);     // Attempt to load if URL params exist
         });
 
-        window.addEventListener('popstate', (event) => {
-            const roomFromHistory = getRoomFromURL();
-            if (roomFromHistory !== currentRoom) {
-                console.log(`Navegação para sala: ${roomFromHistory}`);
-                currentRoom = roomFromHistory;
-                // No need to pushState again, just re-initialize
-                initializeApp();
-            }
+        document.querySelector('a-scene').addEventListener('loaded', () => {
+            console.log('A-Frame scene loaded');
         });
-
     </script>
 </body>
 </html>
