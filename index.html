@@ -9,6 +9,187 @@
     <script src="https://unpkg.com/aframe-text-geometry-component@0.5.1/dist/aframe-text-geometry-component.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/babiaxr/aframe-babia-components@master/dist/aframe-babia-components.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/babiaxr/aframe-babia-components@master/dist/aframe-babia-ui.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* Room selector UI */
+        .room-selector {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            color: white;
+            z-index: 1000;
+            min-width: 250px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .room-selector.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px);
+        }
+        
+        .room-selector h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4CAF50;
+        }
+        
+        .room-input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .room-input {
+            flex: 1;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        
+        .room-input:focus {
+            border-color: #4CAF50;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .room-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .room-btn {
+            padding: 8px 16px;
+            background: #4CAF50;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .room-btn:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+        
+        .room-btn:active {
+            transform: translateY(0px);
+        }
+        
+        .room-status {
+            font-size: 12px;
+            margin-top: 8px;
+            padding: 6px 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .room-status.success {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .room-status.error {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+        
+        .room-status.loading {
+            background: rgba(33, 150, 243, 0.2);
+            color: #2196F3;
+            border: 1px solid rgba(33, 150, 243, 0.3);
+        }
+        
+        /* Minimize button */
+        .minimize-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .minimize-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Collapsed state */
+        .room-selector.collapsed {
+            padding: 10px;
+            min-width: auto;
+            cursor: pointer;
+        }
+        
+        .room-selector.collapsed .room-content {
+            display: none;
+        }
+        
+        .room-selector.collapsed .minimize-btn {
+            display: none;
+        }
+        
+        .collapsed-indicator {
+            display: none;
+            font-size: 12px;
+            color: #4CAF50;
+        }
+        
+        .room-selector.collapsed .collapsed-indicator {
+            display: block;
+        }
+        
+        /* Hide in VR/fullscreen */
+        @media screen and (max-width: 600px) {
+            .room-selector {
+                display: none;
+            }
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #2196F3;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 6px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
     <a-scene background="color: #ECECEC">
@@ -20,12 +201,15 @@
 
         <!-- Loading indicator -->
         <a-entity id="loading-indicator" position="0 3 -5">
-            <a-text value="Loading data..." align="center" color="#FFFFFF" width="8"></a-text>
+            <a-text value="Carregando dados..." align="center" color="#FFFFFF" width="8"></a-text>
+            <a-text id="room-info" value="" position="0 -1 0" align="center" color="#CCCCCC" width="6"></a-text>
         </a-entity>
 
         <!-- Error indicator -->
         <a-entity id="error-indicator" position="0 3 -5" visible="false">
-            <a-text value="Error loading data" align="center" color="#FF0000" width="8"></a-text>
+            <a-text value="O carregamento da sala falhou" align="center" color="#FF6B6B" width="10"></a-text>
+            <a-text value="Verifique o código da sala e tente novamente" position="0 -1.5 0" align="center" color="#FFAA5A" width="8"></a-text>
+            <a-text id="retry-text" value="Clique aqui para tentar novamente" position="0 -3 0" align="center" color="#4CAF50" width="7" class="clickable"></a-text>
         </a-entity>
 
         <!-- Ponto de inserção de gráficos -->
@@ -39,13 +223,177 @@
         </a-entity>
     </a-scene>
 
+    <!-- Room Selector UI -->
+    <div class="room-selector" id="roomSelector">
+        <button class="minimize-btn" id="minimizeBtn">−</button>
+        <div class="collapsed-indicator">Sala: <span id="currentRoomDisplay">LD5RU</span></div>
+        <div class="room-content">
+            <h3>🏠 Seletor de Sala</h3>
+            <div class="room-input-group">
+                <input type="text" class="room-input" id="roomInput" placeholder="Código da sala (ex: LD5RU)" maxlength="10">
+                <button class="room-btn" id="connectBtn">Conectar</button>
+            </div>
+            <div class="room-status" id="roomStatus" style="display: none;"></div>
+        </div>
+    </div>
+
     <script>
         const root = document.getElementById('charts-root');
         const loadingIndicator = document.getElementById('loading-indicator');
         const errorIndicator = document.getElementById('error-indicator');
+        const retryText = document.getElementById('retry-text');
+
+        // Room selector elements
+        const roomSelector = document.getElementById('roomSelector');
+        const roomInput = document.getElementById('roomInput');
+        const connectBtn = document.getElementById('connectBtn');
+        const roomStatus = document.getElementById('roomStatus');
+        const minimizeBtn = document.getElementById('minimizeBtn');
+        const currentRoomDisplay = document.getElementById('currentRoomDisplay');
 
         // API Configuration
-        const API_URL = 'https://modsi-api-ffhhfgecfdehhscv.spaincentral-01.azurewebsites.net/api/Room/Get/LD5RU?code=z4tKbNFdaaXzHZ4ayn9pRQokNWYgRkbVkCjOxTxP-8ChAzFuMigGCw==';
+        const API_BASE_URL = 'https://modsi-api-ffhhfgecfdehhscv.spaincentral-01.azurewebsites.net/api/Room/Get/';
+        const API_CODE = 'z4tKbNFdaaXzHZ4ayn9pRQokNWYgRkbVkCjOxTxP-8ChAzFuMigGCw==';
+        
+        let currentRoom = 'LD5RU';
+        let isCollapsed = false;
+        
+        // Function to get room from URL parameters
+        function getRoomFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomParam = urlParams.get('room');
+            
+            if (roomParam) {
+                console.log(`Room parameter found: ${roomParam}`);
+                return roomParam;
+            }
+            
+            // Fallback: try to get from hash (for URLs like #room=code)
+            const hash = window.location.hash.substring(1);
+            const hashParams = new URLSearchParams(hash);
+            const roomHash = hashParams.get('room');
+            
+            if (roomHash) {
+                console.log(`Room hash found: ${roomHash}`);
+                return roomHash;
+            }
+            
+            // Default fallback
+            console.log('No room parameter found, using default: LD5RU');
+            return 'LD5RU';
+        }
+        
+        // Build API URL with room parameter
+        function buildAPIURL(room) {
+            return `${API_BASE_URL}${room}?code=${API_CODE}`;
+        }
+
+        // Room selector functionality
+        function showRoomStatus(message, type) {
+            roomStatus.textContent = message;
+            roomStatus.className = `room-status ${type}`;
+            roomStatus.style.display = 'block';
+            
+            if (type !== 'loading') {
+                setTimeout(() => {
+                    roomStatus.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        function updateCurrentRoomDisplay(room) {
+            currentRoomDisplay.textContent = room;
+            currentRoom = room;
+        }
+
+        function toggleRoomSelector() {
+            isCollapsed = !isCollapsed;
+            roomSelector.classList.toggle('collapsed', isCollapsed);
+            minimizeBtn.textContent = isCollapsed ? '+' : '−';
+        }
+
+        function hideRoomSelector() {
+            roomSelector.classList.add('hidden');
+        }
+
+        function showRoomSelector() {
+            roomSelector.classList.remove('hidden');
+        }
+
+        // Event listeners for room selector
+        minimizeBtn.addEventListener('click', toggleRoomSelector);
+
+        roomSelector.addEventListener('click', (e) => {
+            if (isCollapsed && e.target === roomSelector) {
+                toggleRoomSelector();
+            }
+        });
+
+        connectBtn.addEventListener('click', () => {
+            const newRoom = roomInput.value.trim().toUpperCase();
+            if (newRoom && newRoom !== currentRoom) {
+                connectToRoom(newRoom);
+            }
+        });
+
+        roomInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                connectBtn.click();
+            }
+        });
+
+        async function connectToRoom(room) {
+            try {
+                showRoomStatus('Conectando...', 'loading');
+                connectBtn.disabled = true;
+                
+                // Update URL without reload
+                const newUrl = new URL(window.location);
+                newUrl.searchParams.set('room', room);
+                window.history.pushState({}, '', newUrl);
+                
+                // Initialize with new room
+                await initializeApp();
+                
+                updateCurrentRoomDisplay(room);
+                showRoomStatus('Conectado com sucesso!', 'success');
+                
+            } catch (error) {
+                console.error('Failed to connect to room:', error);
+                showRoomStatus('Falha na conexão', 'error');
+                showRoomSelector(); // Make sure selector is visible on error
+            } finally {
+                connectBtn.disabled = false;
+            }
+        }
+
+        // Detect fullscreen/VR mode to hide UI
+        function handleFullscreenChange() {
+            const isFullscreen = document.fullscreenElement || 
+                                document.webkitFullscreenElement || 
+                                document.mozFullScreenElement || 
+                                document.msFullscreenElement;
+            
+            if (isFullscreen) {
+                hideRoomSelector();
+            } else {
+                showRoomSelector();
+            }
+        }
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+        // VR mode detection (A-Frame specific)
+        document.querySelector('a-scene').addEventListener('enter-vr', () => {
+            hideRoomSelector();
+        });
+
+        document.querySelector('a-scene').addEventListener('exit-vr', () => {
+            showRoomSelector();
+        });
 
         // Configurações de posicionamento
         const POSITION_CONFIG = {
@@ -382,284 +730,4 @@
                 const pieConfig = {
                     legend: true,
                     palette: palette,
-                    animation: false, // Desativar animação para reduzir problemas
-                    key: 'key',
-                    size: 'size',
-                    data: JSON.stringify(pieData),
-                    showInfo: true,
-                    showInfoColor: '#FFFFFF'
-                };
-                
-                const pieAttrString = Object.entries(pieConfig)
-                    .map(([key, value]) => `${key}: ${value}`)
-                    .join('; ');
-                
-                pieEl.setAttribute('babia-pie', pieAttrString);
-                
-                // Aplicar rotação e escala apenas ao gráfico, não ao título
-                pieEl.setAttribute('rotation', '90 0 0');
-                pieEl.setAttribute('scale', '1.8 1.8 1.8'); // Aplicar escala apenas ao gráfico
-                
-                chartContainer.appendChild(pieEl);
-                
-                // Adicionar um pequeno delay para garantir que o componente seja inicializado corretamente
-                setTimeout(() => {
-                    if (pieEl.components && pieEl.components['babia-pie']) {
-                        console.log(`Gráfico pie ${chart.graphname} inicializado com sucesso`);
-                    }
-                }, 100);
-            }
-            
-            return chartContainer;
-        }
-
-        // Função para limpar todos os gráficos
-        function clearCharts() {
-            while (root.firstChild) {
-                root.removeChild(root.firstChild);
-            }
-        }
-
-        // Função para obter a unidade temporal padrão do JSON
-        function getDefaultTimeType(chart) {
-            // A unidade temporal está definida na propriedade xAxis do JSON
-            if (chart.xAxis) {
-                const mappedType = JSON_TIME_MAPPING[chart.xAxis];
-                if (mappedType) {
-                    console.log(`Chart ${chart.graphname}: usando unidade temporal ${chart.xAxis} -> ${mappedType}`);
-                    return mappedType;
-                }
-            }
-            
-            // Verificar outras possíveis propriedades como fallback
-            if (chart.timeUnit) {
-                const mappedType = JSON_TIME_MAPPING[chart.timeUnit];
-                if (mappedType) {
-                    return mappedType;
-                }
-            }
-            
-            if (chart.xAxisUnit) {
-                const mappedType = JSON_TIME_MAPPING[chart.xAxisUnit];
-                if (mappedType) {
-                    return mappedType;
-                }
-            }
-            
-            if (chart.temporalUnit) {
-                const mappedType = JSON_TIME_MAPPING[chart.temporalUnit];
-                if (mappedType) {
-                    return mappedType;
-                }
-            }
-            
-            // Se não encontrar, usar anos como padrão
-            console.log(`Chart ${chart.graphname}: usando padrão 'years'`);
-            return 'years';
-        }
-
-        // Função para inicializar estados dos gráficos
-        function initializeChartStates() {
-            chartStates = {};
-            chartsData.forEach((chartConfig, index) => {
-                const defaultTimeType = getDefaultTimeType(chartConfig.chart);
-                const kpiId = parseInt(chartConfig.chart.zAxis);
-                const hasValue1 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1');
-                const hasValue2 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2');
-                
-                // Determinar qual valor usar como padrão
-                let defaultValueType = 'NewValue_1';
-                if (!hasValue1 && hasValue2) {
-                    defaultValueType = 'NewValue_2';
-                } else if (hasValue1) {
-                    defaultValueType = 'NewValue_1';
-                }
-                
-                chartStates[index] = {
-                    valueType: defaultValueType,
-                    timeType: defaultTimeType
-                };
-                
-                console.log(`Chart ${index} (${chartConfig.chart.graphname}): valor=${defaultValueType}, tempo=${defaultTimeType}, hasValue1=${hasValue1}, hasValue2=${hasValue2}`);
-            });
-        }
-
-        // Função para renderizar todos os gráficos
-        function renderAllCharts() {
-            clearCharts();
-            
-            let chartIndex = 0;
-            
-            chartsData.forEach((chartConfig, originalIndex) => {
-                const { kpihistory, chart } = chartConfig;
-                const kpiId = parseInt(chart.zAxis);
-                
-                const hasValue1 = hasValidData(kpihistory, kpiId, 'NewValue_1');
-                const hasValue2 = hasValidData(kpihistory, kpiId, 'NewValue_2');
-                
-                // Renderizar apenas se houver dados válidos para pelo menos um dos valores
-                if (hasValue1 || hasValue2) {
-                    const state = chartStates[originalIndex];
-                    
-                    // Se não há dados para o tipo atual, alternar automaticamente
-                    if (state.valueType === 'NewValue_1' && !hasValue1 && hasValue2) {
-                        state.valueType = 'NewValue_2';
-                    } else if (state.valueType === 'NewValue_2' && !hasValue2 && hasValue1) {
-                        state.valueType = 'NewValue_1';
-                    }
-                    
-                    const el = createChart(chartConfig, chartIndex, state.valueType, state.timeType);
-                    root.appendChild(el);
-                    
-                    const buttonsEl = createChartButtons(chartIndex, state);
-                    root.appendChild(buttonsEl);
-                    
-                    chartIndex++;
-                }
-            });
-        }
-
-        // Function to show/hide loading indicator
-        function showLoading(show) {
-            loadingIndicator.setAttribute('visible', show);
-        }
-
-        // Function to show/hide error indicator
-        function showError(show, message = 'Error loading data') {
-            errorIndicator.setAttribute('visible', show);
-            if (show) {
-                const errorText = errorIndicator.querySelector('a-text');
-                errorText.setAttribute('value', message);
-            }
-        }
-
-        // Function to fetch data from API with retry logic
-        async function fetchDataFromAPI(retries = 3) {
-            for (let attempt = 1; attempt <= retries; attempt++) {
-                try {
-                    console.log(`Fetching data from API (attempt ${attempt}/${retries})...`);
-                    
-                    const response = await fetch(API_URL, {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
-                    }
-
-                    const data = await response.json();
-                    console.log('API Response:', data);
-                    
-                    // Validate data structure
-                    if (!Array.isArray(data) || data.length === 0) {
-                        throw new Error('Invalid data format: expected non-empty array');
-                    }
-
-                    // Check if first item has the expected structure
-                    const firstItem = data[0];
-                    if (!firstItem.config || !firstItem.config.kpihistory || !firstItem.config.charts) {
-                        throw new Error('Invalid data structure: missing required properties');
-                    }
-
-                    return data;
-
-                } catch (error) {
-                    console.error(`Attempt ${attempt} failed:`, error.message);
-                    
-                    if (attempt === retries) {
-                        throw error; // Re-throw on final attempt
-                    }
-                    
-                    // Wait before retrying (exponential backoff)
-                    await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-                }
-            }
-        }
-
-        // Initialize the application
-        async function initializeApp() {
-            try {
-                showLoading(true);
-                showError(false);
-                
-                console.log('Initializing application...');
-                
-                // Fetch data from API
-                const apiData = await fetchDataFromAPI();
-                
-                console.log('Data loaded successfully:', apiData);
-                configurationsData = apiData;
-                
-                // Process and store chart data (compatible with the new API format)
-                chartsData = [];
-                apiData.forEach(config => {
-                    const { kpihistory, charts } = config.config;
-                    
-                    charts.forEach(chart => {
-                        chartsData.push({
-                            kpihistory: kpihistory,
-                            chart: chart
-                        });
-                    });
-                });
-                
-                console.log('Charts data processed:', chartsData);
-                
-                // Check if we have any charts to display
-                if (chartsData.length === 0) {
-                    throw new Error('No charts found in the data');
-                }
-                
-                // Initialize chart states (using units from JSON)
-                initializeChartStates();
-                
-                console.log('Chart states initialized:', chartStates);
-                
-                // Hide loading indicator
-                showLoading(false);
-                
-                // Render all charts
-                renderAllCharts();
-                
-                console.log('Application initialized successfully');
-                
-            } catch (error) {
-                console.error('Failed to initialize application:', error);
-                showLoading(false);
-                showError(true, `Failed to load data: ${error.message}`);
-                
-                // Optional: Add retry button
-                setTimeout(() => {
-                    const retryText = document.createElement('a-text');
-                    retryText.setAttribute('value', 'Click to retry');
-                    retryText.setAttribute('position', '0 -1 0');
-                    retryText.setAttribute('align', 'center');
-                    retryText.setAttribute('color', '#00FF00');
-                    retryText.setAttribute('width', '6');
-                    retryText.setAttribute('class', 'clickable');
-                    retryText.addEventListener('click', () => {
-                        retryText.parentNode.removeChild(retryText);
-                        initializeApp();
-                    });
-                    errorIndicator.appendChild(retryText);
-                }, 1000);
-            }
-        }
-
-        // Start the application when the page loads
-        window.addEventListener('load', () => {
-            console.log('Page loaded, starting application...');
-            initializeApp();
-        });
-
-        // Handle A-Frame scene loading
-        document.querySelector('a-scene').addEventListener('loaded', () => {
-            console.log('A-Frame scene loaded');
-        });
-    </script>
-</body>
-</html>
+                    animation: false, // Desativar animação para re
