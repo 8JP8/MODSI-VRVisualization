@@ -1,3 +1,3 @@
-# MODSI-WebApp
-VR Web Application for Data Visualization using BabiaXR
+# MODSI-VRVisualization
+VR Room Environment for visualization of company indicators data on 3D charts.
  
