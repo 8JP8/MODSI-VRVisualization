@@ -2,34 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BabiaXR - Gráfico 3D</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
     <script src="https://unpkg.com/aframe-environment-component@1.3.3/dist/aframe-environment-component.min.js"></script>
     <script src="https://unpkg.com/aframe-text-geometry-component@0.5.1/dist/aframe-text-geometry-component.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/babiaxr/aframe-babia-components@master/dist/aframe-babia-components.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/babiaxr/aframe-babia-components@master/dist/aframe-babia-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/babiaxr/aframe-babia-ui@master/dist/aframe-babia-ui.min.js"></script>
     <style>
         body {
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #10141F 0%, #1A1D29 100%);
+            color: #E0E6F1;
         }
         
-        /* Loading overlay */
         .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #0D1117 0%, #1A1D29 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 2000;
-            color: white;
+            color: #E0E6F1;
             opacity: 1;
             transition: opacity 0.5s ease;
         }
@@ -46,51 +47,51 @@
         }
         
         .loading-title {
-            font-size: 2rem;
-            font-weight: 300;
-            margin-bottom: 1rem;
-            color: #ffffff;
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #FFFFFF;
         }
         
         .loading-text {
             font-size: 1.1rem;
             margin-bottom: 2rem;
             opacity: 0.9;
+            color: #B0B8C5;
         }
         
         .loading-spinner {
             width: 50px;
             height: 50px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            border: 4px solid rgba(44, 182, 246, 0.25);
             border-radius: 50%;
-            border-top-color: #4fc3f7;
+            border-top-color: #2CB6F6;
             animation: spin 1s ease-in-out infinite;
-            margin: 0 auto 1rem;
+            margin: 0 auto 1.5rem;
         }
         
-        /* Room selector UI */
         .room-selector {
             position: fixed;
             bottom: 25px;
             left: 25px;
-            background: linear-gradient(135deg, rgba(30, 60, 114, 0.95) 0%, rgba(42, 82, 152, 0.95) 100%);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(79, 195, 247, 0.3);
-            border-radius: 16px;
+            background: rgba(31, 35, 51, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(70, 80, 110, 0.4);
+            border-radius: 12px;
             padding: 20px;
-            color: white;
+            color: #E0E6F1;
             z-index: 1000;
-            min-width: 280px;
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4), 
-                        0 0 0 1px rgba(79, 195, 247, 0.1) inset;
+            min-width: 300px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                        0 0 0 1px rgba(70, 80, 110, 0.2) inset;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
         }
         
         .room-selector:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 16px 64px rgba(0, 0, 0, 0.5),
-                        0 0 0 1px rgba(79, 195, 247, 0.2) inset;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5),
+                        0 0 0 1px rgba(70, 80, 110, 0.3) inset;
         }
         
         .room-selector.hidden {
@@ -100,52 +101,53 @@
         }
         
         .room-selector h3 {
-            margin: 0 0 15px 0;
-            font-size: 16px;
+            margin: 0 0 18px 0;
+            font-size: 1.1rem;
             font-weight: 600;
-            color: #4fc3f7;
+            color: #FFFFFF;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
         
         .room-icon {
-            width: 18px;
-            height: 18px;
-            opacity: 0.9;
+            width: 20px;
+            height: 20px;
+            fill: #2CB6F6;
+            opacity: 1;
         }
         
         .room-input-group {
             display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
+            gap: 12px;
+            margin-bottom: 15px;
         }
         
         .room-input {
             flex: 1;
             padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(79, 195, 247, 0.3);
+            background: rgba(26, 29, 41, 0.8);
+            border: 1px solid rgba(70, 80, 110, 0.6);
             border-radius: 8px;
-            color: white;
+            color: #E0E6F1;
             font-size: 14px;
             outline: none;
             transition: all 0.3s ease;
         }
         
         .room-input:focus {
-            border-color: #4fc3f7;
-            background: rgba(79, 195, 247, 0.1);
-            box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.1);
+            border-color: #2CB6F6;
+            background: rgba(31, 35, 51, 0.7);
+            box-shadow: 0 0 0 3px rgba(44, 182, 246, 0.2);
         }
         
         .room-input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(224, 230, 241, 0.4);
         }
         
         .room-btn {
             padding: 12px 20px;
-            background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
+            background: linear-gradient(135deg, #7F5AF0 0%, #2CB6F6 100%); 
             border: none;
             border-radius: 8px;
             color: white;
@@ -155,6 +157,7 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0, 0.2);
         }
         
         .room-btn:before {
@@ -164,8 +167,8 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+            transition: left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
         
         .room-btn:hover:before {
@@ -173,73 +176,74 @@
         }
         
         .room-btn:hover {
-            background: linear-gradient(135deg, #29b6f6 0%, #0288d1 100%);
+            background: linear-gradient(135deg, #8A6FF5 0%, #40C2F7 100%);
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(79, 195, 247, 0.4);
+            box-shadow: 0 7px 15px rgba(127, 90, 240, 0.3);
         }
         
         .room-btn:active {
             transform: translateY(0px);
+            box-shadow: 0 4px 10px rgba(0,0,0, 0.2);
         }
         
         .room-status {
             font-size: 13px;
             margin-top: 10px;
-            padding: 8px 12px;
+            padding: 10px 14px;
             border-radius: 6px;
             text-align: center;
             font-weight: 500;
         }
         
         .room-status.success {
-            background: rgba(76, 175, 80, 0.15);
-            color: #81c784;
-            border: 1px solid rgba(76, 175, 80, 0.3);
+            background: rgba(114, 221, 170, 0.2);
+            color: #72DDAA;
+            border: 1px solid rgba(114, 221, 170, 0.4);
         }
         
         .room-status.error {
-            background: rgba(244, 67, 54, 0.15);
-            color: #e57373;
-            border: 1px solid rgba(244, 67, 54, 0.3);
+            background: rgba(247, 114, 114, 0.2);
+            color: #F77272;
+            border: 1px solid rgba(247, 114, 114, 0.4);
         }
         
         .room-status.loading {
-            background: rgba(79, 195, 247, 0.15);
-            color: #4fc3f7;
-            border: 1px solid rgba(79, 195, 247, 0.3);
+            background: rgba(44, 182, 246, 0.2);
+            color: #2CB6F6;
+            border: 1px solid rgba(44, 182, 246, 0.4);
         }
         
-        /* Minimize button */
         .minimize-btn {
             position: absolute;
-            top: 12px;
-            right: 12px;
-            background: rgba(79, 195, 247, 0.15);
-            border: 1px solid rgba(79, 195, 247, 0.3);
+            top: 15px;
+            right: 15px;
+            background: rgba(70, 80, 110, 0.3);
+            border: 1px solid rgba(70, 80, 110, 0.5);
             border-radius: 6px;
-            color: #4fc3f7;
+            color: #9099AB;
             cursor: pointer;
-            width: 28px;
-            height: 28px;
+            width: 26px;
+            height: 26px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
+            line-height: 1;
             transition: all 0.3s ease;
         }
         
         .minimize-btn:hover {
-            background: rgba(79, 195, 247, 0.25);
-            transform: scale(1.1);
+            background: rgba(70, 80, 110, 0.5);
+            color: #E0E6F1;
+            transform: scale(1.05);
         }
         
-        /* Collapsed state */
         .room-selector.collapsed {
             padding: 12px 16px;
             min-width: auto;
             cursor: pointer;
-            border-radius: 12px;
+            border-radius: 10px;
         }
         
         .room-selector.collapsed .room-content {
@@ -251,55 +255,47 @@
         }
         
         .collapsed-indicator {
-            display: none;
+            display: none; 
             font-size: 13px;
-            color: #4fc3f7;
+            color: #2CB6F6;
             font-weight: 500;
             user-select: none;
             pointer-events: none;
         }
         
         .room-selector.collapsed .collapsed-indicator {
-            display: block;
+            display: block; 
         }
         
-        /* Hide in VR/fullscreen */
-        @media screen and (max-width: 600px) {
-            .room-selector {
-                display: none;
-            }
-        }
-        
-        /* Loading spinner */
-        .spinner {
+        .spinner { 
             display: inline-block;
             width: 14px;
             height: 14px;
-            border: 2px solid rgba(79, 195, 247, 0.3);
+            border: 2px solid rgba(44, 182, 246, 0.3);
             border-radius: 50%;
-            border-top-color: #4fc3f7;
+            border-top-color: #2CB6F6;
             animation: spin 1s ease-in-out infinite;
-            margin-right: 8px;
+            margin-right: 8px; 
+            vertical-align: middle;
         }
         
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
         
-        /* Error overlay */
         .error-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #0D1117 0%, #1A1D29 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 1999; /* Slightly below loading overlay if both were to show */
-            color: white;
+            z-index: 1999; 
+            color: #E0E6F1;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.5s ease;
@@ -318,20 +314,21 @@
         
         .error-title {
             font-size: 2rem;
-            font-weight: 300;
+            font-weight: 600;
             margin-bottom: 1rem;
-            color: #e57373;
+            color: #F77272;
         }
         
         .error-text {
             font-size: 1.1rem;
             margin-bottom: 2rem;
             opacity: 0.9;
+            color: #B0B8C5;
         }
         
         .retry-btn {
             padding: 12px 24px;
-            background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
+            background: linear-gradient(135deg, #7F5AF0 0%, #2CB6F6 100%);
             border: none;
             border-radius: 8px;
             color: white;
@@ -339,22 +336,263 @@
             font-size: 16px;
             font-weight: 600;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0, 0.2);
         }
         
         .retry-btn:hover {
-            background: linear-gradient(135deg, #29b6f6 0%, #0288d1 100%);
+            background: linear-gradient(135deg, #8A6FF5 0%, #40C2F7 100%);
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(79, 195, 247, 0.4);
+            box-shadow: 0 7px 15px rgba(127, 90, 240, 0.3);
+        }
+
+        #closeErrorAndEnterBtn {
+            background: #3D4F7C;
+        }
+        #closeErrorAndEnterBtn:hover {
+            background: #4C5F8A;
+            box-shadow: 0 7px 15px rgba(61, 79, 124, 0.25);
+        }
+
+        /* Enhanced VR/AR Button Styling with Icons */
+        .a-enter-vr-button, .a-enter-ar-button {
+            position: fixed !important; 
+            bottom: 25px !important; 
+            right: 25px !important;
+            background: rgba(42, 47, 65, 0.95) !important;
+            backdrop-filter: blur(8px) !important;
+            border: 1px solid rgba(70, 80, 110, 0.6) !important;
+            border-radius: 12px !important; 
+            color: #2CB6F6 !important;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; 
+            
+            width: 52px !important; 
+            height: 52px !important;
+            padding: 0 !important;
+            
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 
+                        inset 0 1px 0px rgba(255, 255, 255, 0.1) !important;
+            z-index: 9998 !important; 
+            cursor: pointer !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            display: flex !important; 
+            align-items: center !important;
+            justify-content: center !important;
+            line-height: 1 !important;
+        }
+
+        /* AR Button positioning (when both exist) */
+        .a-enter-ar-button {
+            right: 90px !important; /* Offset to the left of VR button */
+        }
+
+        .a-enter-vr-button:hover, .a-enter-ar-button:hover {
+            background: rgba(49, 55, 79, 0.95) !important;
+            border-color: rgba(70, 80, 110, 0.8) !important;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5),
+                        inset 0 1px 0px rgba(255, 255, 255, 0.15) !important;
+            transform: translateY(-2px) !important;
+        }
+
+        .a-enter-vr-button:active, .a-enter-ar-button:active {
+            transform: translateY(0px) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        /* Hide default A-Frame icons and text */
+        .a-enter-vr-button svg,
+        .a-enter-ar-button svg,
+        .a-enter-vr-button span,
+        .a-enter-ar-button span {
+            display: none !important; 
+        }
+
+        /* Add custom VR icon */
+        .a-enter-vr-button::before {
+            content: '';
+            display: block;
+            width: 28px;
+            height: 28px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232CB6F6'%3E%3Cpath d='M20.5 6H3.5C2.67 6 2 6.67 2 7.5v9c0 .83.67 1.5 1.5 1.5H7l1.5-3h7l1.5 3h3.5c.83 0 1.5-.67 1.5-1.5v-9c0-.83-.67-1.5-1.5-1.5zM8 13.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm8 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z'/%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        /* Add custom AR icon */
+        .a-enter-ar-button::before {
+            content: '';
+            display: block;
+            width: 28px;
+            height: 28px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232CB6F6'%3E%3Cpath d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2zm0 4.25L10.16 9.5l-3.45.5 2.5 2.44-.59 3.44L12 14.25l3.38 1.63-.59-3.44 2.5-2.44-3.45-.5L12 6.25z'/%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        /* Mobile Responsive Design */
+        @media screen and (max-width: 768px) {
+            .room-selector {
+                bottom: 15px;
+                left: 15px;
+                right: 15px;
+                min-width: auto;
+                max-width: calc(100vw - 140px); /* Leave space for VR/AR buttons */
+                padding: 15px;
+            }
+            
+            .room-selector.collapsed {
+                max-width: 120px;
+            }
+            
+            .room-input-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .room-input {
+                width: 100%;
+                box-sizing: border-box; /* Ensure padding doesn't add to width */
+                font-size: 16px; /* Prevent zoom on iOS */
+                padding: 14px 16px;
+            }
+            
+            .room-btn {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 14px 20px;
+                font-size: 16px;
+            }
+            
+            .loading-content {
+                padding: 1.5rem;
+                max-width: 90vw;
+            }
+            
+            .loading-title {
+                font-size: 1.8rem;
+            }
+            
+            .loading-text {
+                font-size: 1rem;
+            }
+            
+            .error-content {
+                padding: 1.5rem;
+                max-width: 90vw;
+            }
+            
+            .error-title {
+                font-size: 1.8rem;
+            }
+            
+            .error-text {
+                font-size: 1rem;
+            }
+            
+            /* Mobile VR/AR buttons */
+            .a-enter-vr-button, .a-enter-ar-button {
+                bottom: 15px !important;
+                right: 15px !important;
+                width: 48px !important;
+                height: 48px !important;
+            }
+            
+            .a-enter-ar-button {
+                right: 75px !important; /* 15px (right padding) + 48px (VR button width) + 12px (gap) */
+            }
+            
+            .a-enter-vr-button::before,
+            .a-enter-ar-button::before {
+                width: 24px;
+                height: 24px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .room-selector {
+                bottom: 10px;
+                left: 10px;
+                right: 10px;
+                max-width: calc(100vw - 120px); /* Adjust if AR/VR buttons change size */
+                padding: 12px;
+            }
+            
+            .room-selector.collapsed {
+                max-width: 100px;
+            }
+            
+            .loading-title {
+                font-size: 1.6rem;
+            }
+            
+            .error-title {
+                font-size: 1.6rem;
+            }
+            
+            /* Smaller mobile VR/AR buttons */
+            .a-enter-vr-button, .a-enter-ar-button {
+                bottom: 10px !important;
+                right: 10px !important;
+                width: 44px !important;
+                height: 44px !important;
+            }
+            
+            .a-enter-ar-button {
+                right: 65px !important; /* 10px + 44px + 11px */
+            }
+            
+            .a-enter-vr-button::before,
+            .a-enter-ar-button::before {
+                width: 22px;
+                height: 22px;
+            }
+        }
+
+        /* Touch device improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .room-btn:hover:before {
+                left: -100%; /* Keep shimmer effect off for touch unless active */
+            }
+            
+            .room-btn:active {
+                transform: scale(0.98);
+                background: linear-gradient(135deg, #6B47D9 0%, #1A9BDB 100%);
+            }
+             .room-btn:active:before { /* Trigger shimmer on active for touch */
+                left:100%;
+            }
+            
+            .minimize-btn:hover {
+                transform: none; 
+            }
+             .minimize-btn:active {
+                transform: scale(0.95);
+                background: rgba(70, 80, 110, 0.7);
+            }
+
+            .a-enter-vr-button:hover, .a-enter-ar-button:hover {
+                /* Keep hover state same as non-hover for touch unless active */
+                background: rgba(42, 47, 65, 0.95) !important;
+                border-color: rgba(70, 80, 110, 0.6) !important;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 
+                            inset 0 1px 0px rgba(255, 255, 255, 0.1) !important;
+                transform: translateY(0px) !important;
+            }
+            .a-enter-vr-button:active, .a-enter-ar-button:active {
+                background: rgba(49, 55, 79, 0.95) !important; /* Use hover style for active */
+                transform: translateY(-1px) scale(0.98) !important; /* Slight press effect */
+            }
         }
     </style>
 </head>
 <body>
     <!-- Loading Overlay -->
-    <div class="loading-overlay hidden" id="loadingOverlay"> <!-- Start hidden by default -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
         <div class="loading-content">
             <h1 class="loading-title">MODSiVR</h1>
             <div class="loading-spinner"></div>
-            <p class="loading-text">A carregar dados da sala <span id="currentRoomDisplay"></span>.</p>
+            <p class="loading-text">A carregar dados da sala <span id="currentRoomDisplayLoading"></span>.</p>
             <p class="loading-text" id="roomInfo" style="font-size: 0.9rem; opacity: 0.7;"></p>
         </div>
     </div>
@@ -369,7 +607,7 @@
         </div>
     </div>
 
-    <a-scene background="color: #ECECEC">
+    <a-scene background="color: #ECECEC" vr-mode-ui="enabled: true" ar-mode-ui="enabled: true">
         <a-entity environment="preset: default; groundColor: #445; groundTexture: walk;"></a-entity>
         
         <a-assets>
@@ -388,7 +626,7 @@
     </a-scene>
 
     <!-- Room Selector UI -->
-    <div class="room-selector hidden" id="roomSelector"> <!-- Start hidden, shown by JS logic -->
+    <div class="room-selector hidden" id="roomSelector">
         <button class="minimize-btn" id="minimizeBtn">−</button>
         <div class="room-content">
             <h3>
@@ -403,6 +641,7 @@
             </div>
             <div class="room-status" id="roomStatus" style="display: none;"></div>
         </div>
+        <div class="collapsed-indicator" id="collapsedRoomInfo">Room: N/A</div>
     </div>
 
     <script>
@@ -414,25 +653,39 @@
         const connectBtn = document.getElementById('connectBtn');
         const roomStatus = document.getElementById('roomStatus');
         const minimizeBtn = document.getElementById('minimizeBtn');
-        const currentRoomDisplay = document.getElementById('currentRoomDisplay');
+        const currentRoomDisplayLoading = document.getElementById('currentRoomDisplayLoading'); // For loading overlay
+        const collapsedRoomInfo = document.getElementById('collapsedRoomInfo'); // For minimized room selector
         const loadingOverlay = document.getElementById('loadingOverlay');
         const errorOverlay = document.getElementById('errorOverlay');
         const errorMessage = document.getElementById('errorMessage');
-        const roomInfo = document.getElementById('roomInfo'); // For loading screen
+        const roomInfo = document.getElementById('roomInfo'); // For loading screen additional info
 
         // API Configuration
         const API_BASE_URL = 'https://modsi-api-ffhhfgecfdehhscv.spaincentral-01.azurewebsites.net/api/Room/Get/';
         const API_CODE = 'z4tKbNFdaaXzHZ4ayn9pRQokNWYgRkbVkCjOxTxP-8ChAzFuMigGCw==';
         
         let currentRoom = 'LD5RU'; // Default active room / context
-        let isCollapsed = false;
+        let isCollapsed = false; // Default to expanded
         
+        // Function to update the visual state of the room selector (collapsed/expanded)
+        function updateRoomSelectorCollapsedState() {
+            if (!roomSelector || !minimizeBtn || !collapsedRoomInfo) return; // Guard
+            roomSelector.classList.toggle('collapsed', isCollapsed);
+            minimizeBtn.textContent = isCollapsed ? '+' : '−';
+            collapsedRoomInfo.textContent = 'Room: ' + (currentRoom || 'N/A');
+        }
+
         // Function to synchronize UI elements that display the room name
         function syncRoomUI(roomName) {
             const display = roomName || 'N/A';
-            roomInput.value = display; // Update input field
-            currentRoomDisplay.textContent = display; // Update collapsed view
-            // roomInfo (loading screen text) is updated directly by showLoading
+            if (roomInput) roomInput.value = roomName ? roomName : ''; 
+            if (currentRoomDisplayLoading) currentRoomDisplayLoading.textContent = display;
+            
+            // Update collapsed indicator text immediately when room changes,
+            // as updateRoomSelectorCollapsedState() might not be called if already collapsed.
+            if (collapsedRoomInfo) {
+                collapsedRoomInfo.textContent = 'Room: ' + display;
+            }
         }
 
         // Function to handle URL parameter, normalize URL if 'code' is present
@@ -448,7 +701,6 @@
                 urlParams.set('room', room);
                 const newQueryString = urlParams.toString();
                 const currentSearch = window.location.search.substring(1);
-                // Only update URL if it actually changes to avoid history spam
                 if (currentSearch !== newQueryString) {
                     window.history.replaceState({}, '', `${window.location.pathname}?${newQueryString}${window.location.hash}`);
                     console.log('URL atualizada para usar parâmetro "room".');
@@ -467,15 +719,13 @@
                 }
             }
             
-            return room || null; // Return uppercase room ID or null
+            return room || null;
         }
         
-        // Build API URL with room parameter
         function buildAPIURL(roomCode) {
             return `${API_BASE_URL}${roomCode}?code=${API_CODE}`;
         }
 
-        // Room selector functionality
         function showRoomStatus(message, type) {
             roomStatus.textContent = message;
             roomStatus.className = `room-status ${type}`;
@@ -490,23 +740,22 @@
 
         function toggleRoomSelector() {
             isCollapsed = !isCollapsed;
-            roomSelector.classList.toggle('collapsed', isCollapsed);
-            minimizeBtn.textContent = isCollapsed ? '+' : '−';
+            updateRoomSelectorCollapsedState();
         }
 
         function hideRoomSelector() {
-            roomSelector.classList.add('hidden');
+            if (roomSelector) roomSelector.classList.add('hidden');
         }
 
         function showRoomSelector() {
-            roomSelector.classList.remove('hidden');
+            if (roomSelector) roomSelector.classList.remove('hidden');
         }
 
-        // Show/hide overlays
         function showLoading(show, roomNameForDisplay = null) {
             const displayRoom = roomNameForDisplay || currentRoom;
+            if (currentRoomDisplayLoading) currentRoomDisplayLoading.textContent = displayRoom; // Update specific span for loading
             if (show) {
-                roomInfo.textContent = 'Por favor aguarde...';
+                if(roomInfo) roomInfo.textContent = 'Por favor aguarde...';
                 loadingOverlay.classList.remove('hidden');
             } else {
                 loadingOverlay.classList.add('hidden');
@@ -524,27 +773,25 @@
         
         function closeErrorAndEnterEnvironment() {
             showError(false);
-            showLoading(false); // Ensure loading is also hidden
-            clearCharts();      // Clean up any partially rendered things
-            showRoomSelector(); // Make selector available
-            syncRoomUI(currentRoom); // Ensure UI reflects the room that failed, or default
+            showLoading(false);
+            clearCharts();
+            showRoomSelector();
+            syncRoomUI(currentRoom);
             console.log("Error overlay closed. Entering environment with room selector. Context room: " + currentRoom);
         }
 
         function retryConnection() {
             showError(false);
-            // initializeApp will use currentRoom, which should be the room that failed or from URL
-            initializeApp(true); // true to attempt loading (which will use currentRoom)
+            initializeApp(true);
         }
 
-        // Event listeners for room selector
         minimizeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleRoomSelector();
         });
 
         roomSelector.addEventListener('click', (e) => {
-            if (isCollapsed && e.target === roomSelector) {
+            if (isCollapsed && e.target === roomSelector) { // Only expand if clicking the main collapsed body
                 toggleRoomSelector();
             }
         });
@@ -569,46 +816,42 @@
                  showRoomStatus('Código da sala não pode ser vazio.', 'error');
                  return;
             }
-            // If trying to connect to the same room and it's already loaded without error,
-            // you might want to provide feedback or skip. For now, allow re-connection.
-            // if (newRoomCode === currentRoom && !errorOverlay.classList.contains('visible')) {
-            //    showRoomStatus('Já conectado a esta sala. Recarregando...', 'success');
-            // }
+            currentRoom = newRoomCode;
+            syncRoomUI(currentRoom); // Update UI text
 
-            currentRoom = newRoomCode; // Set the target room globally
-            syncRoomUI(currentRoom);   // Update UI to reflect this new target
+            isCollapsed = false;
+            updateRoomSelectorCollapsedState();
 
-            // Update URL first so initializeApp can pick it up if needed (though we pass currentRoom)
+
             const url = new URL(window.location);
             url.searchParams.set('room', currentRoom);
-            url.searchParams.delete('code'); // Clean up 'code' if 'room' is being explicitly set
+            url.searchParams.delete('code'); // Clean up 'code' if it was ever used
             window.history.pushState({}, '', url.toString());
 
             showRoomStatus(`Conectando à sala ${currentRoom}...`, 'loading');
             connectBtn.disabled = true;
 
-            await initializeApp(true); // true: attempt to load the (now current) room
+            await initializeApp(true); 
 
-            // After initializeApp completes, check its outcome
-            if (!errorOverlay.classList.contains('visible')) {
+            if (!errorOverlay.classList.contains('visible')) { 
                 showRoomStatus(`Conectado à sala ${currentRoom} com sucesso!`, 'success');
+                isCollapsed = false; 
+                updateRoomSelectorCollapsedState();
             } else {
-                // Error message is already on errorOverlay
                 showRoomStatus(`Falha ao carregar sala ${currentRoom}.`, 'error');
             }
             
             connectBtn.disabled = false;
-            // Fullscreen/VR handlers will manage roomSelector visibility
         }
 
-        // Detect fullscreen/VR mode to hide UI
         function handleFullscreenChange() {
+            const sceneEl = document.querySelector('a-scene');
             const isFullscreen = document.fullscreenElement || 
                                 document.webkitFullscreenElement || 
                                 document.mozFullScreenElement || 
                                 document.msFullscreenElement;
             
-            if (isFullscreen || document.querySelector('a-scene').is('vr-mode')) {
+            if (isFullscreen || (sceneEl && sceneEl.is('vr-mode')) || (sceneEl && sceneEl.is('ar-mode'))) {
                 hideRoomSelector();
             } else {
                 showRoomSelector();
@@ -620,8 +863,13 @@
         document.addEventListener('mozfullscreenchange', handleFullscreenChange);
         document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 
-        document.querySelector('a-scene').addEventListener('enter-vr', hideRoomSelector);
-        document.querySelector('a-scene').addEventListener('exit-vr', showRoomSelector);
+        const sceneEl = document.querySelector('a-scene');
+        if (sceneEl) {
+            sceneEl.addEventListener('enter-vr', hideRoomSelector);
+            sceneEl.addEventListener('exit-vr', showRoomSelector);
+            sceneEl.addEventListener('enter-ar', hideRoomSelector); // Added for AR
+            sceneEl.addEventListener('exit-ar', showRoomSelector);   // Added for AR
+        }
 
 
         const POSITION_CONFIG = { startX: -18, baseY: 1.5, baseZ: 12, spacingX: 12, pieOffsetY: 3 };
@@ -677,49 +925,61 @@
             renderSingleChart(chartIndex);
         }
 
-        function renderSingleChart(chartIndex) {
+        function renderSingleChart(chartIndex) { 
             const chartConfig = chartsData[chartIndex];
             const state = chartStates[chartIndex];
             if (!chartConfig || !state) return;
-
+            
             const existingChart = root.querySelector(`[data-chart-index="${chartIndex}"]`);
             const existingButtons = root.querySelector(`[data-buttons-index="${chartIndex}"]`);
 
             if (existingChart) {
                 if (chartConfig.chart.chartType === "pizza" && existingChart.components && existingChart.components['babia-pie']) {
-                    existingChart.removeAttribute('babia-pie'); // Deregister component
+                    existingChart.removeAttribute('babia-pie'); 
                 }
-                // Delay removal slightly for component deregistration
                 setTimeout(() => {
                     if (existingChart.parentNode) existingChart.parentNode.removeChild(existingChart);
                     if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
                     
-                    // Re-create after removal
-                    const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType);
+                    let visibleChartIndex = 0;
+                    for(let i=0; i < chartIndex; i++){
+                        if(chartsData[i] && (hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_1') || hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_2'))){
+                            visibleChartIndex++;
+                        }
+                    }
+
+                    const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType, visibleChartIndex);
                     root.appendChild(chartEl);
-                    const buttonsEl = createChartButtons(chartIndex, state);
+                    const buttonsEl = createChartButtons(chartIndex, state, visibleChartIndex);
                     root.appendChild(buttonsEl);
                 }, 50);
-            } else { // If somehow no existing chart, just create new
+            } else { 
                  if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
-                 const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType);
+                 
+                 let visibleChartIndex = 0;
+                 for(let i=0; i < chartIndex; i++){
+                     if(chartsData[i] && (hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_1') || hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_2'))){
+                         visibleChartIndex++;
+                     }
+                 }
+                 const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType, visibleChartIndex);
                  root.appendChild(chartEl);
-                 const buttonsEl = createChartButtons(chartIndex, state);
+                 const buttonsEl = createChartButtons(chartIndex, state, visibleChartIndex);
                  root.appendChild(buttonsEl);
             }
         }
         
-        function createChartButtons(chartIndex, state) {
-            const chartConfig = chartsData[chartIndex];
-            const position = calculatePosition(chartIndex, false);
+        function createChartButtons(originalIndex, state, visibleIndex) {
+            const chartConfig = chartsData[originalIndex];
+            const position = calculatePosition(visibleIndex, false); 
             const [x, y, z] = position.split(' ').map(parseFloat);
             const kpiId = parseInt(chartConfig.chart.zAxis);
             const hasValue1 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1');
             const hasValue2 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2');
             
             const buttonsContainer = document.createElement('a-entity');
-            buttonsContainer.setAttribute('position', `${x + 6} ${parseFloat(y) + 8} ${z}`); // Ensure y is float
-            buttonsContainer.setAttribute('data-buttons-index', chartIndex);
+            buttonsContainer.setAttribute('position', `${x + 6} ${parseFloat(y) + 8} ${z}`);
+            buttonsContainer.setAttribute('data-buttons-index', originalIndex); 
             let buttonVerticalOffset = 0;
 
             if (hasValue1 && hasValue2) {
@@ -732,7 +992,7 @@
                 valueText.setAttribute('position', '0 0 0.06'); valueText.setAttribute('align', 'center'); valueText.setAttribute('color', 'white'); valueText.setAttribute('width', '4');
                 valueButton.appendChild(valueText);
                 valueButton.setAttribute('class', 'clickable');
-                valueButton.addEventListener('click', (event) => { event.stopPropagation(); setTimeout(() => toggleChartValue(chartIndex), 100); });
+                valueButton.addEventListener('click', (event) => { event.stopPropagation(); setTimeout(() => toggleChartValue(originalIndex), 100); });
                 buttonsContainer.appendChild(valueButton);
                 buttonVerticalOffset -= 1.2;
             }
@@ -746,25 +1006,25 @@
             timeText.setAttribute('position', '0 0 0.06'); timeText.setAttribute('align', 'center'); timeText.setAttribute('color', 'white'); timeText.setAttribute('width', '4');
             timeButton.appendChild(timeText);
             timeButton.setAttribute('class', 'clickable');
-            timeButton.addEventListener('click', (event) => { event.stopPropagation(); setTimeout(() => toggleChartTimeType(chartIndex), 100); });
+            timeButton.addEventListener('click', (event) => { event.stopPropagation(); setTimeout(() => toggleChartTimeType(originalIndex), 100); });
             buttonsContainer.appendChild(timeButton);
             return buttonsContainer;
         }
 
-        function createChart(chartConfigData, chartIndex, valueType, timeType = 'years') {
+        function createChart(chartConfigData, originalIndex, valueType, timeType = 'years', visibleIndex) {
             const { kpihistory, chart } = chartConfigData;
             const kpiId = parseInt(chart.zAxis);
             const chartContainer = document.createElement('a-entity');
             const isPieChart = chart.chartType === "pizza";
-            chartContainer.setAttribute('position', calculatePosition(chartIndex, isPieChart));
-            chartContainer.setAttribute('data-chart-index', chartIndex);
+            chartContainer.setAttribute('position', calculatePosition(visibleIndex, isPieChart)); 
+            chartContainer.setAttribute('data-chart-index', originalIndex); 
             const palette = valueType === 'NewValue_1' ? 'commerce' : 'ubuntu';
             const productName = valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2';
             const timeLabel = TIME_TYPES[timeType].label;
 
             if (chart.chartType === "barras") {
                 const chartData = processKPIData(kpihistory, kpiId, timeType, valueType);
-                const babiaConfig = `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: true; title: ${chart.graphname} (${productName} - ${timeLabel}); titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 2 12 0; heightMax: 800; x_axis: key; height: height; data: ${JSON.stringify(chartData)}; showInfo: true; showInfoColor: #FFFFFF`;
+                const babiaConfig = `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: false; title: ${chart.graphname} (${productName} - ${timeLabel}); titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 2 12 0; heightMax: 800; x_axis: key; height: height; data: ${JSON.stringify(chartData)}; showInfo: true; showInfoColor: #FFFFFF`;
                 chartContainer.setAttribute('babia-bars', babiaConfig);
             } else if (chart.chartType === "pizza") {
                 let pieData = processPieData(kpihistory, kpiId, timeType, valueType);
@@ -774,9 +1034,10 @@
                 titleEl.setAttribute('position', '1 6 0'); titleEl.setAttribute('align', 'center'); titleEl.setAttribute('color', '#FFFFFF'); titleEl.setAttribute('width', '8');
                 chartContainer.appendChild(titleEl);
                 const pieEl = document.createElement('a-entity');
-                const pieConfig = `legend: true; palette: ${palette}; animation: true; key: key; size: size; data: ${JSON.stringify(pieData)}; showInfo: true; showInfoColor: #FFFFFF`;
+                const pieConfig = `legend: true; palette: ${palette}; animation: false; key: key; size: size; data: ${JSON.stringify(pieData)}; showInfo: true; showInfoColor: #FFFFFF`;
                 pieEl.setAttribute('babia-pie', pieConfig);
-                pieEl.setAttribute('rotation', '90 0 0'); pieEl.setAttribute('scale', '1.8 1.8 1.8');
+                pieEl.setAttribute('rotation', '90 0 0'); 
+                pieEl.setAttribute('scale', '1.8 1.8 1.8');
                 chartContainer.appendChild(pieEl);
             }
             return chartContainer;
@@ -784,7 +1045,7 @@
 
         function clearCharts() {
             while (root.firstChild) root.removeChild(root.firstChild);
-            chartsData = []; // Also clear the data array
+            chartsData = [];
             chartStates = {};
         }
 
@@ -795,7 +1056,7 @@
 
         function initializeChartStates() {
             chartStates = {};
-            chartsData.forEach((chartConfig, index) => {
+            chartsData.forEach((chartConfig, index) => { 
                 const kpiId = parseInt(chartConfig.chart.zAxis);
                 const hasValue1 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1');
                 const hasValue2 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2');
@@ -806,20 +1067,19 @@
         }
 
         function renderAllCharts() {
-            // Clear existing before rendering all, root node is used
             while (root.firstChild) {
                 root.removeChild(root.firstChild);
             }
             
-            let visibleChartIndex = 0; // To manage layout if some charts are skipped
+            let visibleChartIndex = 0;
             chartsData.forEach((chartConfig, originalIndex) => {
                 const { kpihistory, chart } = chartConfig;
                 const kpiId = parseInt(chart.zAxis);
                 if (hasValidData(kpihistory, kpiId, 'NewValue_1') || hasValidData(kpihistory, kpiId, 'NewValue_2')) {
                     const state = chartStates[originalIndex];
-                    const el = createChart(chartConfig, visibleChartIndex, state.valueType, state.timeType);
+                    const el = createChart(chartConfig, originalIndex, state.valueType, state.timeType, visibleChartIndex);
                     root.appendChild(el);
-                    const buttonsEl = createChartButtons(visibleChartIndex, state);
+                    const buttonsEl = createChartButtons(originalIndex, state, visibleChartIndex); 
                     root.appendChild(buttonsEl);
                     visibleChartIndex++;
                 }
@@ -835,12 +1095,11 @@
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
                     const data = await response.json();
                     if (!data) throw new Error('Nenhum dado recebido da API');
-                    // Validate specific structure: [ { "config": { "kpihistory": [], "charts": [] } } ]
                     if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].config === 'object' &&
                         Array.isArray(data[0].config.kpihistory) && Array.isArray(data[0].config.charts)) {
-                        return data; // Return the full array
+                        return data;
                     }
-                    throw new Error('Estrutura de dados da API inválida. Esperado: Array com [0].config.kpihistory e [0].config.charts.');
+                    throw new Error('Estrutura de dados da API inválida.');
                 } catch (error) {
                     console.error(`Tentativa ${attempt} falhou: ${error.message}`);
                     if (attempt === retries) throw error;
@@ -850,68 +1109,71 @@
         }
 
         async function initializeApp(attemptLoadFromUrl = true) {
-            const roomFromUrl = getRoomFromURL(); // Normalizes URL if 'code' param was used
+            const roomFromUrl = getRoomFromURL();
             let roomToLoad = null;
+            let localIsCollapsed = false; 
 
             if (attemptLoadFromUrl && roomFromUrl) {
                 roomToLoad = roomFromUrl;
             }
 
             if (roomToLoad) {
-                currentRoom = roomToLoad; // Update global current room *before* attempting to load
-                syncRoomUI(currentRoom);  // Update UI elements
-                showLoading(true, currentRoom); // Pass currentRoom for display text
+                currentRoom = roomToLoad;
+                syncRoomUI(currentRoom); 
+                showLoading(true, currentRoom);
                 showError(false);
 
                 try {
                     console.log(`Initializing application for room: ${currentRoom}...`);
                     const apiDataArray = await fetchDataFromAPI(currentRoom);
                     
-                    // apiDataArray is [ { "name": ..., "config": { kpihistory: [], charts: [] } } ]
                     const config = apiDataArray[0].config; 
                     const kpihistoryFromConfig = config.kpihistory;
                     const chartsFromConfig = config.charts;
 
-                    if (!kpihistoryFromConfig || !chartsFromConfig) { // Should be caught by fetchDataFromAPI
+                    if (!kpihistoryFromConfig || !chartsFromConfig) {
                         throw new Error('Missing kpihistory or charts in API response config.');
                     }
                     
-                    chartsData = []; // Clear previous charts data
+                    chartsData = [];
                     chartsFromConfig.forEach(chart => {
                         chartsData.push({
-                            kpihistory: kpihistoryFromConfig, // Common kpihistory
+                            kpihistory: kpihistoryFromConfig,
                             chart: chart
                         });
                     });
 
                     if (chartsData.length === 0) {
                         console.warn('Nenhum gráfico encontrado nos dados para esta sala.');
-                        clearCharts(); // Ensure any old charts are gone
+                        clearCharts();
                     } else {
                         initializeChartStates();
                         renderAllCharts();
                     }
 
+                    localIsCollapsed = true; 
+
                     setTimeout(() => showLoading(false), 500);
-                    showRoomSelector(); // Ensure room selector is visible
                     console.log(`Application initialized successfully for room: ${currentRoom}`);
 
                 } catch (error) {
                     console.error(`Falha ao inicializar para a sala ${currentRoom}:`, error);
+                    localIsCollapsed = false; 
                     showLoading(false);
                     showError(true, `Falha ao carregar dados da sala ${currentRoom}: ${error.message}`);
-                    showRoomSelector(); // Ensure selector is available for another attempt or choice
                 }
             } else {
-                // No room from URL to load, or not attempting. Setup for manual selection.
-                // currentRoom retains its last value (e.g. default 'LD5RU' or last loaded/attempted)
-                syncRoomUI(currentRoom); // Ensure UI reflects current context (e.g. default)
+                localIsCollapsed = false; 
+                syncRoomUI(currentRoom); 
                 showLoading(false);
                 showError(false);
-                clearCharts();      // Clear any pre-existing charts from a previous session if any
-                showRoomSelector(); // Make room selector visible
-                console.log("Nenhuma sala especificada na URL para carregamento automático, ou carregamento automático ignorado. Seletor de sala ativo. Sala de contexto: " + currentRoom);
+                clearCharts();
+                console.log("Nenhuma sala especificada na URL para carregamento automático. Seletor de sala ativo. Sala de contexto: " + currentRoom);
             }
+
+            isCollapsed = localIsCollapsed; 
+            updateRoomSelectorCollapsedState(); 
+            showRoomSelector(); 
         }
 
         window.addEventListener('load', () => {
@@ -920,13 +1182,14 @@
             if (closeBtn) {
                 closeBtn.addEventListener('click', closeErrorAndEnterEnvironment);
             }
-            syncRoomUI(currentRoom); // Initialize UI elements with the default room name
-            initializeApp(true);     // Attempt to load if URL params exist
+            initializeApp(true);
         });
 
-        document.querySelector('a-scene').addEventListener('loaded', () => {
-            console.log('A-Frame scene loaded');
-        });
+        if (sceneEl) { // Check if sceneEl is not null before adding event listener
+            sceneEl.addEventListener('loaded', () => {
+                console.log('A-Frame scene loaded');
+            });
+        }
     </script>
 </body>
 </html>
