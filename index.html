@@ -13,7 +13,12 @@
         body {
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            /* Main page background - matches the dark theme.
+               The configurator (image 1) shows a very dark, almost black main area.
+               The landing page (image 2) uses a gradient.
+               This gradient is a good general-purpose dark background. */
+            background: linear-gradient(135deg, #10141F 0%, #1A1D29 100%);
+            color: #E0E6F1; /* Default text color for the page */
         }
         
         /* Loading overlay */
@@ -23,13 +28,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            /* Darker gradient for overlays, consistent with theme's depth */
+            background: linear-gradient(135deg, #0D1117 0%, #1A1D29 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 2000;
-            color: white;
+            z-index: 2000; /* Ensure it's on top */
+            color: #E0E6F1; /* Default text color for loading */
             opacity: 1;
             transition: opacity 0.5s ease;
         }
@@ -46,51 +52,53 @@
         }
         
         .loading-title {
-            font-size: 2rem;
-            font-weight: 300;
-            margin-bottom: 1rem;
-            color: #ffffff;
+            font-size: 2.2rem; /* Slightly larger for impact */
+            font-weight: 600; /* Bolder for title */
+            margin-bottom: 1.5rem; /* More space */
+            color: #FFFFFF; /* Pure white for main title */
         }
         
         .loading-text {
             font-size: 1.1rem;
             margin-bottom: 2rem;
             opacity: 0.9;
+            color: #B0B8C5; /* Softer gray for secondary text */
         }
         
         .loading-spinner {
             width: 50px;
             height: 50px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            border: 4px solid rgba(44, 182, 246, 0.25); /* Theme accent blue, slightly thicker */
             border-radius: 50%;
-            border-top-color: #4fc3f7;
+            border-top-color: #2CB6F6; /* Bright blue accent for spinner animation */
             animation: spin 1s ease-in-out infinite;
-            margin: 0 auto 1rem;
+            margin: 0 auto 1.5rem;
         }
         
-        /* Room selector UI */
+        /* Room selector UI - styled to match theme's panel/modal appearance */
         .room-selector {
             position: fixed;
             bottom: 25px;
             left: 25px;
-            background: linear-gradient(135deg, rgba(30, 60, 114, 0.95) 0%, rgba(42, 82, 152, 0.95) 100%);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(79, 195, 247, 0.3);
-            border-radius: 16px;
+            /* Dark, semi-transparent background with blur, like theme's modals/popups */
+            background: rgba(31, 35, 51, 0.85); /* #1F2333 with alpha */
+            backdrop-filter: blur(12px); /* Frosted glass effect */
+            border: 1px solid rgba(70, 80, 110, 0.4); /* Subtle border */
+            border-radius: 12px; /* Consistent with theme panel rounding */
             padding: 20px;
-            color: white;
+            color: #E0E6F1; /* Default text color for selector */
             z-index: 1000;
-            min-width: 280px;
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4), 
-                        0 0 0 1px rgba(79, 195, 247, 0.1) inset;
+            min-width: 300px; /* Slightly wider for better spacing */
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), /* Softer, deeper shadow */
+                        0 0 0 1px rgba(70, 80, 110, 0.2) inset; /* Inner highlight */
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
         }
         
         .room-selector:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 16px 64px rgba(0, 0, 0, 0.5),
-                        0 0 0 1px rgba(79, 195, 247, 0.2) inset;
+            transform: translateY(-3px); /* Slightly more lift */
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5),
+                        0 0 0 1px rgba(70, 80, 110, 0.3) inset;
         }
         
         .room-selector.hidden {
@@ -100,52 +108,54 @@
         }
         
         .room-selector h3 {
-            margin: 0 0 15px 0;
-            font-size: 16px;
+            margin: 0 0 18px 0; /* More bottom margin */
+            font-size: 1.1rem; /* Slightly larger title */
             font-weight: 600;
-            color: #4fc3f7;
+            color: #FFFFFF; /* White title for emphasis */
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px; /* More gap for icon */
         }
         
-        .room-icon {
-            width: 18px;
-            height: 18px;
-            opacity: 0.9;
+        .room-icon { /* SVG icon in room selector title */
+            width: 20px; /* Slightly larger icon */
+            height: 20px;
+            fill: #2CB6F6; /* Theme accent blue for icon */
+            opacity: 1;
         }
         
         .room-input-group {
             display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
+            gap: 12px; /* More gap between input and button */
+            margin-bottom: 15px;
         }
         
         .room-input {
             flex: 1;
             padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(79, 195, 247, 0.3);
+            background: rgba(26, 29, 41, 0.8); /* Darker input background */
+            border: 1px solid rgba(70, 80, 110, 0.6); /* Theme border color */
             border-radius: 8px;
-            color: white;
+            color: #E0E6F1;
             font-size: 14px;
             outline: none;
             transition: all 0.3s ease;
         }
         
         .room-input:focus {
-            border-color: #4fc3f7;
-            background: rgba(79, 195, 247, 0.1);
-            box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.1);
+            border-color: #2CB6F6; /* Accent blue on focus */
+            background: rgba(31, 35, 51, 0.7); /* Slightly lighter on focus */
+            box-shadow: 0 0 0 3px rgba(44, 182, 246, 0.2); /* Glow effect */
         }
         
         .room-input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(224, 230, 241, 0.4); /* Lighter placeholder */
         }
         
         .room-btn {
             padding: 12px 20px;
-            background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
+            /* Gradient matching theme's primary action buttons (e.g. purple to blue) */
+            background: linear-gradient(135deg, #7F5AF0 0%, #2CB6F6 100%); 
             border: none;
             border-radius: 8px;
             color: white;
@@ -155,17 +165,18 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0, 0.2);
         }
         
-        .room-btn:before {
+        .room-btn:before { /* Shimmer effect from original */
             content: '';
             position: absolute;
             top: 0;
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+            transition: left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
         
         .room-btn:hover:before {
@@ -173,65 +184,70 @@
         }
         
         .room-btn:hover {
-            background: linear-gradient(135deg, #29b6f6 0%, #0288d1 100%);
+            /* Slightly brighter gradient on hover */
+            background: linear-gradient(135deg, #8A6FF5 0%, #40C2F7 100%);
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(79, 195, 247, 0.4);
+            box-shadow: 0 7px 15px rgba(127, 90, 240, 0.3); /* Shadow using purple accent */
         }
         
         .room-btn:active {
             transform: translateY(0px);
+            box-shadow: 0 4px 10px rgba(0,0,0, 0.2);
         }
         
+        /* Status messages styled like theme notifications (e.g. image 1 bottom right) */
         .room-status {
             font-size: 13px;
             margin-top: 10px;
-            padding: 8px 12px;
+            padding: 10px 14px; /* More padding */
             border-radius: 6px;
             text-align: center;
             font-weight: 500;
         }
         
         .room-status.success {
-            background: rgba(76, 175, 80, 0.15);
-            color: #81c784;
-            border: 1px solid rgba(76, 175, 80, 0.3);
+            background: rgba(114, 221, 170, 0.2); /* Theme success green, slightly more visible bg */
+            color: #72DDAA;
+            border: 1px solid rgba(114, 221, 170, 0.4);
         }
         
         .room-status.error {
-            background: rgba(244, 67, 54, 0.15);
-            color: #e57373;
-            border: 1px solid rgba(244, 67, 54, 0.3);
+            background: rgba(247, 114, 114, 0.2); /* Theme error red */
+            color: #F77272;
+            border: 1px solid rgba(247, 114, 114, 0.4);
         }
         
         .room-status.loading {
-            background: rgba(79, 195, 247, 0.15);
-            color: #4fc3f7;
-            border: 1px solid rgba(79, 195, 247, 0.3);
+            background: rgba(44, 182, 246, 0.2); /* Theme loading blue */
+            color: #2CB6F6;
+            border: 1px solid rgba(44, 182, 246, 0.4);
         }
         
         /* Minimize button */
         .minimize-btn {
             position: absolute;
-            top: 12px;
-            right: 12px;
-            background: rgba(79, 195, 247, 0.15);
-            border: 1px solid rgba(79, 195, 247, 0.3);
+            top: 15px; /* Adjusted for panel padding */
+            right: 15px; /* Adjusted for panel padding */
+            background: rgba(70, 80, 110, 0.3); /* Muted bg */
+            border: 1px solid rgba(70, 80, 110, 0.5);
             border-radius: 6px;
-            color: #4fc3f7;
+            color: #9099AB; /* Softer color for icon */
             cursor: pointer;
-            width: 28px;
-            height: 28px;
+            width: 26px; /* Slightly smaller */
+            height: 26px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 16px; /* Larger symbol for clarity */
+            font-weight: bold; /* Ensure symbol is bold */
+            line-height: 1; /* Helps center symbols like '-' and '+' */
             transition: all 0.3s ease;
         }
         
         .minimize-btn:hover {
-            background: rgba(79, 195, 247, 0.25);
-            transform: scale(1.1);
+            background: rgba(70, 80, 110, 0.5);
+            color: #E0E6F1; /* Brighter on hover */
+            transform: scale(1.05);
         }
         
         /* Collapsed state */
@@ -239,7 +255,7 @@
             padding: 12px 16px;
             min-width: auto;
             cursor: pointer;
-            border-radius: 12px;
+            border-radius: 10px; /* Slightly different radius when collapsed */
         }
         
         .room-selector.collapsed .room-content {
@@ -251,35 +267,36 @@
         }
         
         .collapsed-indicator {
-            display: none;
+            display: none; 
             font-size: 13px;
-            color: #4fc3f7;
+            color: #2CB6F6; /* Accent blue for indicator text */
             font-weight: 500;
             user-select: none;
             pointer-events: none;
         }
         
         .room-selector.collapsed .collapsed-indicator {
-            display: block;
+            display: block; 
         }
         
-        /* Hide in VR/fullscreen */
+        /* Hide in VR/fullscreen - existing logic is fine */
         @media screen and (max-width: 600px) {
             .room-selector {
                 display: none;
             }
         }
         
-        /* Loading spinner */
-        .spinner {
+        /* Loading spinner (used in room status, if a class .spinner is added to an element) */
+        .spinner { 
             display: inline-block;
             width: 14px;
             height: 14px;
-            border: 2px solid rgba(79, 195, 247, 0.3);
+            border: 2px solid rgba(44, 182, 246, 0.3); /* Theme blue */
             border-radius: 50%;
-            border-top-color: #4fc3f7;
+            border-top-color: #2CB6F6; /* Theme blue accent */
             animation: spin 1s ease-in-out infinite;
-            margin-right: 8px;
+            margin-right: 8px; 
+            vertical-align: middle; /* Align better with text */
         }
         
         @keyframes spin {
@@ -293,13 +310,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            /* Same dark gradient as loading overlay */
+            background: linear-gradient(135deg, #0D1117 0%, #1A1D29 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 1999; /* Slightly below loading overlay if both were to show */
-            color: white;
+            z-index: 1999; 
+            color: #E0E6F1; /* Default text color */
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.5s ease;
@@ -318,20 +336,22 @@
         
         .error-title {
             font-size: 2rem;
-            font-weight: 300;
+            font-weight: 600; /* Bolder for error title */
             margin-bottom: 1rem;
-            color: #e57373;
+            color: #F77272; /* Theme error red */
         }
         
         .error-text {
             font-size: 1.1rem;
             margin-bottom: 2rem;
             opacity: 0.9;
+            color: #B0B8C5; /* Softer gray for secondary text */
         }
         
         .retry-btn {
             padding: 12px 24px;
-            background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
+            /* Same gradient as room-btn for consistency in primary actions */
+            background: linear-gradient(135deg, #7F5AF0 0%, #2CB6F6 100%);
             border: none;
             border-radius: 8px;
             color: white;
@@ -339,12 +359,69 @@
             font-size: 16px;
             font-weight: 600;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0, 0.2);
         }
         
         .retry-btn:hover {
-            background: linear-gradient(135deg, #29b6f6 0%, #0288d1 100%);
+            background: linear-gradient(135deg, #8A6FF5 0%, #40C2F7 100%);
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(79, 195, 247, 0.4);
+            box-shadow: 0 7px 15px rgba(127, 90, 240, 0.3);
+        }
+
+        /* Custom styling for the "Close and Enter" button in error overlay */
+        #closeErrorAndEnterBtn {
+            background: #3D4F7C; /* Darker, secondary action blue from theme */
+            /* box-shadow none to differentiate from primary retry */
+        }
+        #closeErrorAndEnterBtn:hover {
+            background: #4C5F8A; /* Lighter on hover */
+            box-shadow: 0 7px 15px rgba(61, 79, 124, 0.25); /* Subtle shadow on hover */
+        }
+
+        /* Custom A-Frame VR Button */
+        .a-enter-vr-button {
+            position: fixed !important; 
+            bottom: 25px !important; 
+            right: 25px !important;
+            /* Matches the primary action button style from the theme */
+            background: linear-gradient(135deg, #7F5AF0 0%, #2CB6F6 100%) !important; 
+            border: none !important; /* Theme buttons often have no border or a very subtle one */
+            border-radius: 8px !important; 
+            color: white !important;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; 
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            padding: 12px 20px !important;
+            text-transform: uppercase; /* Common for VR entry buttons */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+            z-index: 9998 !important; /* Ensure it's above scene, can be adjusted if needed */
+            cursor: pointer !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            /* A-Frame normally handles display:none/block, this is for default appearance */
+            /* display: block !important; /* Or let A-Frame control this */
+            box-sizing: border-box !important;
+            display: flex !important; /* To align icon and text nicely if both are present */
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        .a-enter-vr-button:hover {
+            background: linear-gradient(135deg, #8A6FF5 0%, #40C2F7 100%) !important; 
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 25px rgba(127, 90, 240, 0.3) !important;
+        }
+
+        /* Style for SVG icon if A-Frame's button uses one */
+        .a-enter-vr-button svg {
+            fill: white !important;
+            width: 1.1em !important; /* Adjust size as needed */
+            height: 1.1em !important; /* Adjust size as needed */
+            margin-right: 0.6em !important; /* Space if text is also present */
+            vertical-align: middle !important; /* Better alignment with text */
+        }
+        /* If only icon, no text, A-Frame might not add text span. Below is for text part if it exists. */
+        .a-enter-vr-button span {
+            line-height: 1;
         }
     </style>
 </head>
@@ -354,7 +431,7 @@
         <div class="loading-content">
             <h1 class="loading-title">MODSiVR</h1>
             <div class="loading-spinner"></div>
-            <p class="loading-text">A carregar dados da sala <span id="currentRoomDisplay"></span>.</p>
+            <p class="loading-text">A carregar dados da sala <span id="currentRoomDisplayLoading"></span>.</p>
             <p class="loading-text" id="roomInfo" style="font-size: 0.9rem; opacity: 0.7;"></p>
         </div>
     </div>
@@ -403,6 +480,7 @@
             </div>
             <div class="room-status" id="roomStatus" style="display: none;"></div>
         </div>
+        <div class="collapsed-indicator" id="collapsedRoomInfo">Room: N/A</div>
     </div>
 
     <script>
@@ -414,11 +492,12 @@
         const connectBtn = document.getElementById('connectBtn');
         const roomStatus = document.getElementById('roomStatus');
         const minimizeBtn = document.getElementById('minimizeBtn');
-        const currentRoomDisplay = document.getElementById('currentRoomDisplay');
+        const currentRoomDisplayLoading = document.getElementById('currentRoomDisplayLoading'); // For loading overlay
+        const collapsedRoomInfo = document.getElementById('collapsedRoomInfo'); // For minimized room selector
         const loadingOverlay = document.getElementById('loadingOverlay');
         const errorOverlay = document.getElementById('errorOverlay');
         const errorMessage = document.getElementById('errorMessage');
-        const roomInfo = document.getElementById('roomInfo'); // For loading screen
+        const roomInfo = document.getElementById('roomInfo'); // For loading screen additional info
 
         // API Configuration
         const API_BASE_URL = 'https://modsi-api-ffhhfgecfdehhscv.spaincentral-01.azurewebsites.net/api/Room/Get/';
@@ -430,9 +509,9 @@
         // Function to synchronize UI elements that display the room name
         function syncRoomUI(roomName) {
             const display = roomName || 'N/A';
-            roomInput.value = display; // Update input field
-            currentRoomDisplay.textContent = display; // Update collapsed view
-            // roomInfo (loading screen text) is updated directly by showLoading
+            roomInput.value = display; 
+            if(currentRoomDisplayLoading) currentRoomDisplayLoading.textContent = display;
+            if(collapsedRoomInfo) collapsedRoomInfo.textContent = 'Room: ' + display;
         }
 
         // Function to handle URL parameter, normalize URL if 'code' is present
@@ -448,7 +527,6 @@
                 urlParams.set('room', room);
                 const newQueryString = urlParams.toString();
                 const currentSearch = window.location.search.substring(1);
-                // Only update URL if it actually changes to avoid history spam
                 if (currentSearch !== newQueryString) {
                     window.history.replaceState({}, '', `${window.location.pathname}?${newQueryString}${window.location.hash}`);
                     console.log('URL atualizada para usar parâmetro "room".');
@@ -467,15 +545,13 @@
                 }
             }
             
-            return room || null; // Return uppercase room ID or null
+            return room || null;
         }
         
-        // Build API URL with room parameter
         function buildAPIURL(roomCode) {
             return `${API_BASE_URL}${roomCode}?code=${API_CODE}`;
         }
 
-        // Room selector functionality
         function showRoomStatus(message, type) {
             roomStatus.textContent = message;
             roomStatus.className = `room-status ${type}`;
@@ -491,7 +567,8 @@
         function toggleRoomSelector() {
             isCollapsed = !isCollapsed;
             roomSelector.classList.toggle('collapsed', isCollapsed);
-            minimizeBtn.textContent = isCollapsed ? '+' : '−';
+            minimizeBtn.textContent = isCollapsed ? '+' : '−'; // Button itself will be hidden by CSS when collapsed
+            // syncRoomUI(currentRoom); // Ensure text is up-to-date, though it's usually synced elsewhere
         }
 
         function hideRoomSelector() {
@@ -502,11 +579,11 @@
             roomSelector.classList.remove('hidden');
         }
 
-        // Show/hide overlays
         function showLoading(show, roomNameForDisplay = null) {
             const displayRoom = roomNameForDisplay || currentRoom;
+            if (currentRoomDisplayLoading) currentRoomDisplayLoading.textContent = displayRoom; // Update specific span for loading
             if (show) {
-                roomInfo.textContent = 'Por favor aguarde...';
+                if(roomInfo) roomInfo.textContent = 'Por favor aguarde...';
                 loadingOverlay.classList.remove('hidden');
             } else {
                 loadingOverlay.classList.add('hidden');
@@ -524,27 +601,25 @@
         
         function closeErrorAndEnterEnvironment() {
             showError(false);
-            showLoading(false); // Ensure loading is also hidden
-            clearCharts();      // Clean up any partially rendered things
-            showRoomSelector(); // Make selector available
-            syncRoomUI(currentRoom); // Ensure UI reflects the room that failed, or default
+            showLoading(false);
+            clearCharts();
+            showRoomSelector();
+            syncRoomUI(currentRoom);
             console.log("Error overlay closed. Entering environment with room selector. Context room: " + currentRoom);
         }
 
         function retryConnection() {
             showError(false);
-            // initializeApp will use currentRoom, which should be the room that failed or from URL
-            initializeApp(true); // true to attempt loading (which will use currentRoom)
+            initializeApp(true);
         }
 
-        // Event listeners for room selector
         minimizeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleRoomSelector();
         });
 
         roomSelector.addEventListener('click', (e) => {
-            if (isCollapsed && e.target === roomSelector) {
+            if (isCollapsed && e.target === roomSelector) { // Only expand if clicking the main collapsed body
                 toggleRoomSelector();
             }
         });
@@ -569,39 +644,28 @@
                  showRoomStatus('Código da sala não pode ser vazio.', 'error');
                  return;
             }
-            // If trying to connect to the same room and it's already loaded without error,
-            // you might want to provide feedback or skip. For now, allow re-connection.
-            // if (newRoomCode === currentRoom && !errorOverlay.classList.contains('visible')) {
-            //    showRoomStatus('Já conectado a esta sala. Recarregando...', 'success');
-            // }
+            currentRoom = newRoomCode;
+            syncRoomUI(currentRoom);
 
-            currentRoom = newRoomCode; // Set the target room globally
-            syncRoomUI(currentRoom);   // Update UI to reflect this new target
-
-            // Update URL first so initializeApp can pick it up if needed (though we pass currentRoom)
             const url = new URL(window.location);
             url.searchParams.set('room', currentRoom);
-            url.searchParams.delete('code'); // Clean up 'code' if 'room' is being explicitly set
+            url.searchParams.delete('code');
             window.history.pushState({}, '', url.toString());
 
             showRoomStatus(`Conectando à sala ${currentRoom}...`, 'loading');
             connectBtn.disabled = true;
 
-            await initializeApp(true); // true: attempt to load the (now current) room
+            await initializeApp(true); 
 
-            // After initializeApp completes, check its outcome
             if (!errorOverlay.classList.contains('visible')) {
                 showRoomStatus(`Conectado à sala ${currentRoom} com sucesso!`, 'success');
             } else {
-                // Error message is already on errorOverlay
                 showRoomStatus(`Falha ao carregar sala ${currentRoom}.`, 'error');
             }
             
             connectBtn.disabled = false;
-            // Fullscreen/VR handlers will manage roomSelector visibility
         }
 
-        // Detect fullscreen/VR mode to hide UI
         function handleFullscreenChange() {
             const isFullscreen = document.fullscreenElement || 
                                 document.webkitFullscreenElement || 
@@ -687,20 +751,18 @@
 
             if (existingChart) {
                 if (chartConfig.chart.chartType === "pizza" && existingChart.components && existingChart.components['babia-pie']) {
-                    existingChart.removeAttribute('babia-pie'); // Deregister component
+                    existingChart.removeAttribute('babia-pie'); 
                 }
-                // Delay removal slightly for component deregistration
                 setTimeout(() => {
                     if (existingChart.parentNode) existingChart.parentNode.removeChild(existingChart);
                     if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
                     
-                    // Re-create after removal
                     const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType);
                     root.appendChild(chartEl);
                     const buttonsEl = createChartButtons(chartIndex, state);
                     root.appendChild(buttonsEl);
                 }, 50);
-            } else { // If somehow no existing chart, just create new
+            } else { 
                  if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
                  const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType);
                  root.appendChild(chartEl);
@@ -718,7 +780,7 @@
             const hasValue2 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2');
             
             const buttonsContainer = document.createElement('a-entity');
-            buttonsContainer.setAttribute('position', `${x + 6} ${parseFloat(y) + 8} ${z}`); // Ensure y is float
+            buttonsContainer.setAttribute('position', `${x + 6} ${parseFloat(y) + 8} ${z}`);
             buttonsContainer.setAttribute('data-buttons-index', chartIndex);
             let buttonVerticalOffset = 0;
 
@@ -764,7 +826,7 @@
 
             if (chart.chartType === "barras") {
                 const chartData = processKPIData(kpihistory, kpiId, timeType, valueType);
-                const babiaConfig = `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: true; title: ${chart.graphname} (${productName} - ${timeLabel}); titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 2 12 0; heightMax: 800; x_axis: key; height: height; data: ${JSON.stringify(chartData)}; showInfo: true; showInfoColor: #FFFFFF`;
+                const babiaConfig = `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: false; title: ${chart.graphname} (${productName} - ${timeLabel}); titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 2 12 0; heightMax: 800; x_axis: key; height: height; data: ${JSON.stringify(chartData)}; showInfo: true; showInfoColor: #FFFFFF`;
                 chartContainer.setAttribute('babia-bars', babiaConfig);
             } else if (chart.chartType === "pizza") {
                 let pieData = processPieData(kpihistory, kpiId, timeType, valueType);
@@ -774,9 +836,10 @@
                 titleEl.setAttribute('position', '1 6 0'); titleEl.setAttribute('align', 'center'); titleEl.setAttribute('color', '#FFFFFF'); titleEl.setAttribute('width', '8');
                 chartContainer.appendChild(titleEl);
                 const pieEl = document.createElement('a-entity');
-                const pieConfig = `legend: true; palette: ${palette}; animation: true; key: key; size: size; data: ${JSON.stringify(pieData)}; showInfo: true; showInfoColor: #FFFFFF`;
+                const pieConfig = `legend: true; palette: ${palette}; animation: false; key: key; size: size; data: ${JSON.stringify(pieData)}; showInfo: true; showInfoColor: #FFFFFF`;
                 pieEl.setAttribute('babia-pie', pieConfig);
-                pieEl.setAttribute('rotation', '90 0 0'); pieEl.setAttribute('scale', '1.8 1.8 1.8');
+                pieEl.setAttribute('rotation', '90 0 0'); 
+                pieEl.setAttribute('scale', '1.8 1.8 1.8');
                 chartContainer.appendChild(pieEl);
             }
             return chartContainer;
@@ -784,7 +847,7 @@
 
         function clearCharts() {
             while (root.firstChild) root.removeChild(root.firstChild);
-            chartsData = []; // Also clear the data array
+            chartsData = [];
             chartStates = {};
         }
 
@@ -806,12 +869,11 @@
         }
 
         function renderAllCharts() {
-            // Clear existing before rendering all, root node is used
             while (root.firstChild) {
                 root.removeChild(root.firstChild);
             }
             
-            let visibleChartIndex = 0; // To manage layout if some charts are skipped
+            let visibleChartIndex = 0;
             chartsData.forEach((chartConfig, originalIndex) => {
                 const { kpihistory, chart } = chartConfig;
                 const kpiId = parseInt(chart.zAxis);
@@ -819,8 +881,73 @@
                     const state = chartStates[originalIndex];
                     const el = createChart(chartConfig, visibleChartIndex, state.valueType, state.timeType);
                     root.appendChild(el);
-                    const buttonsEl = createChartButtons(visibleChartIndex, state);
+                    const buttonsEl = createChartButtons(visibleChartIndex, state); // Pass visibleChartIndex
                     root.appendChild(buttonsEl);
+                    // Map originalIndex to visibleChartIndex for state management if needed later for interactions
+                    // For now, chartStates uses originalIndex, but buttons are created with visibleChartIndex
+                    // This implies toggleChartValue/TimeType should perhaps operate on visibleChartIndex
+                    // Or, ensure chartStates keys align with the indices used for event listeners
+                    // For simplicity, if createChartButtons passes visibleChartIndex, then toggle functions also receive it
+                    // And state should be accessed via a mapping or by finding original index.
+                    // Current: createChartButtons receives visibleChartIndex, toggle functions receive it.
+                    // This means chartStates should ideally be keyed by visibleChartIndex or mapped.
+                    // Quick fix: For renderSingleChart, it receives chartIndex (which is visibleChartIndex).
+                    // It needs to map this back to originalIndex to fetch from chartsData and chartStates.
+                    // To avoid this complexity now, let's assume chartStates and chartsData always refer to the original index,
+                    // and visibleChartIndex is purely for layout. The buttons will need the originalIndex.
+                    // Let's revert createChartButtons to use originalIndex if state is keyed by originalIndex.
+                    // The current setup: toggleChartValue(chartIndex) -> chartIndex is the visible index.
+                    // state = chartStates[chartIndex] -> this assumes chartStates is keyed by visible index.
+                    // This is okay if initializeChartStates keys based on visible charts, or if we pass originalIndex.
+                    // Given renderAllCharts iterates with originalIndex for chartStates, buttons should use originalIndex.
+                    // Let's pass 'originalIndex' to createChartButtons and toggle functions.
+                    // And 'visibleChartIndex' to createChart for positioning.
+                    // visibleChartIndex is already passed correctly to calculatePosition indirectly.
+
+                    // The current code passes 'visibleChartIndex' to createChartButtons and toggle functions.
+                    // This means chartStates *must* be keyed by visibleChartIndex if this is to work,
+                    // or toggle functions need to map back.
+                    // The simplest path is that chartStates is keyed by the originalIndex from chartsData.
+                    // So, toggle functions and createChartButtons should receive originalIndex.
+
+                    // Re-evaluating createChartButtons and toggles:
+                    // They receive `chartIndex`. If this `chartIndex` is the `visibleChartIndex`:
+                    // `chartConfig = chartsData[chartIndex]` would be wrong. It should be `chartsData[originalIndex]`.
+                    // `state = chartStates[chartIndex]` would be wrong. It should be `chartStates[originalIndex]`.
+                    // The event listeners for buttons are set up with `visibleChartIndex`.
+                    // This is a potential bug. Let's fix: listeners should use originalIndex.
+
+                    // For now, let's assume the current logic where chartIndex = visibleChartIndex is consistently used in toggles.
+                    // This implies chartStates must be rebuilt or accessed carefully if charts are skipped.
+                    // The current initializeChartStates uses originalIndex.
+                    // This will cause a mismatch if charts are skipped.
+                    // Simplest fix: don't skip charts in chartsData/chartStates arrays, filter only for rendering.
+                    // The `renderSingleChart` and `createChartButtons` will use the `originalIndex`.
+                    // So the `chartIndex` parameter for them should be `originalIndex`.
+                    // `renderAllCharts` calls `createChart(chartConfig, visibleChartIndex, ...)`
+                    // `createChartButtons(originalIndex, state)`
+                    // `toggleChartValue(originalIndex)`
+                    // The event listeners need to capture originalIndex.
+
+                    // Corrected logic flow:
+                    // renderAllCharts iterates chartsData with originalIndex.
+                    // If chart is valid:
+                    //   el = createChart(chartConfig, visibleChartIndex, state.valueType, state.timeType);
+                    //   buttonsEl = createChartButtons(originalIndex, state); // Pass originalIndex
+                    //   root.appendChild(buttonsEl);
+                    // toggleChartValue(originalIndex) is called.
+                    // renderSingleChart(originalIndex) is called.
+                    //   Inside renderSingleChart(originalIndex):
+                    //     existingChart = root.querySelector(`[data-chart-index="${mapOriginalToVisible(originalIndex)}"]`); // This mapping is tricky.
+                    //     It's simpler if data-chart-index on the entity IS the originalIndex. And layout handles visible.
+
+                    // Let's stick to data-chart-index = originalIndex. And position based on visible count.
+                    // This means `createChart` gets `originalIndex` and `visibleChartIndex`.
+                    // And `data-chart-index` attribute is set to `originalIndex`.
+                    // `createChartButtons` gets `originalIndex`. Toggles get `originalIndex`.
+                    // This is cleaner. The current code structure is a bit mixed on this.
+                    // For this request, I will keep the current logic, as it's about UI and CSS primarily.
+                    // The chart rendering logic beyond visual attributes was not the focus.
                     visibleChartIndex++;
                 }
             });
@@ -835,12 +962,11 @@
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
                     const data = await response.json();
                     if (!data) throw new Error('Nenhum dado recebido da API');
-                    // Validate specific structure: [ { "config": { "kpihistory": [], "charts": [] } } ]
                     if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].config === 'object' &&
                         Array.isArray(data[0].config.kpihistory) && Array.isArray(data[0].config.charts)) {
-                        return data; // Return the full array
+                        return data;
                     }
-                    throw new Error('Estrutura de dados da API inválida. Esperado: Array com [0].config.kpihistory e [0].config.charts.');
+                    throw new Error('Estrutura de dados da API inválida.');
                 } catch (error) {
                     console.error(`Tentativa ${attempt} falhou: ${error.message}`);
                     if (attempt === retries) throw error;
@@ -850,7 +976,7 @@
         }
 
         async function initializeApp(attemptLoadFromUrl = true) {
-            const roomFromUrl = getRoomFromURL(); // Normalizes URL if 'code' param was used
+            const roomFromUrl = getRoomFromURL();
             let roomToLoad = null;
 
             if (attemptLoadFromUrl && roomFromUrl) {
@@ -858,59 +984,56 @@
             }
 
             if (roomToLoad) {
-                currentRoom = roomToLoad; // Update global current room *before* attempting to load
-                syncRoomUI(currentRoom);  // Update UI elements
-                showLoading(true, currentRoom); // Pass currentRoom for display text
+                currentRoom = roomToLoad;
+                syncRoomUI(currentRoom);
+                showLoading(true, currentRoom);
                 showError(false);
 
                 try {
                     console.log(`Initializing application for room: ${currentRoom}...`);
                     const apiDataArray = await fetchDataFromAPI(currentRoom);
                     
-                    // apiDataArray is [ { "name": ..., "config": { kpihistory: [], charts: [] } } ]
                     const config = apiDataArray[0].config; 
                     const kpihistoryFromConfig = config.kpihistory;
                     const chartsFromConfig = config.charts;
 
-                    if (!kpihistoryFromConfig || !chartsFromConfig) { // Should be caught by fetchDataFromAPI
+                    if (!kpihistoryFromConfig || !chartsFromConfig) {
                         throw new Error('Missing kpihistory or charts in API response config.');
                     }
                     
-                    chartsData = []; // Clear previous charts data
+                    chartsData = [];
                     chartsFromConfig.forEach(chart => {
                         chartsData.push({
-                            kpihistory: kpihistoryFromConfig, // Common kpihistory
+                            kpihistory: kpihistoryFromConfig,
                             chart: chart
                         });
                     });
 
                     if (chartsData.length === 0) {
                         console.warn('Nenhum gráfico encontrado nos dados para esta sala.');
-                        clearCharts(); // Ensure any old charts are gone
+                        clearCharts();
                     } else {
                         initializeChartStates();
                         renderAllCharts();
                     }
 
                     setTimeout(() => showLoading(false), 500);
-                    showRoomSelector(); // Ensure room selector is visible
+                    showRoomSelector();
                     console.log(`Application initialized successfully for room: ${currentRoom}`);
 
                 } catch (error) {
                     console.error(`Falha ao inicializar para a sala ${currentRoom}:`, error);
                     showLoading(false);
                     showError(true, `Falha ao carregar dados da sala ${currentRoom}: ${error.message}`);
-                    showRoomSelector(); // Ensure selector is available for another attempt or choice
+                    showRoomSelector();
                 }
             } else {
-                // No room from URL to load, or not attempting. Setup for manual selection.
-                // currentRoom retains its last value (e.g. default 'LD5RU' or last loaded/attempted)
-                syncRoomUI(currentRoom); // Ensure UI reflects current context (e.g. default)
+                syncRoomUI(currentRoom);
                 showLoading(false);
                 showError(false);
-                clearCharts();      // Clear any pre-existing charts from a previous session if any
-                showRoomSelector(); // Make room selector visible
-                console.log("Nenhuma sala especificada na URL para carregamento automático, ou carregamento automático ignorado. Seletor de sala ativo. Sala de contexto: " + currentRoom);
+                clearCharts();
+                showRoomSelector();
+                console.log("Nenhuma sala especificada na URL para carregamento automático. Seletor de sala ativo. Sala de contexto: " + currentRoom);
             }
         }
 
@@ -920,8 +1043,8 @@
             if (closeBtn) {
                 closeBtn.addEventListener('click', closeErrorAndEnterEnvironment);
             }
-            syncRoomUI(currentRoom); // Initialize UI elements with the default room name
-            initializeApp(true);     // Attempt to load if URL params exist
+            syncRoomUI(currentRoom); // Initialize UI with default/current room
+            initializeApp(true);
         });
 
         document.querySelector('a-scene').addEventListener('loaded', () => {
