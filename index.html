@@ -2,40 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BabiaXR - Gráfico 3D</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
     <script src="https://unpkg.com/aframe-environment-component@1.3.3/dist/aframe-environment-component.min.js"></script>
     <script src="https://unpkg.com/aframe-text-geometry-component@0.5.1/dist/aframe-text-geometry-component.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/babiaxr/aframe-babia-components@master/dist/aframe-babia-components.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/babiaxr/aframe-babia-components@master/dist/aframe-babia-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/babiaxr/aframe-babia-ui@master/dist/aframe-babia-ui.min.js"></script>
     <style>
         body {
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            /* Main page background - matches the dark theme.
-               The configurator (image 1) shows a very dark, almost black main area.
-               The landing page (image 2) uses a gradient.
-               This gradient is a good general-purpose dark background. */
             background: linear-gradient(135deg, #10141F 0%, #1A1D29 100%);
-            color: #E0E6F1; /* Default text color for the page */
+            color: #E0E6F1;
         }
         
-        /* Loading overlay */
         .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            /* Darker gradient for overlays, consistent with theme's depth */
             background: linear-gradient(135deg, #0D1117 0%, #1A1D29 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 2000; /* Ensure it's on top */
-            color: #E0E6F1; /* Default text color for loading */
+            z-index: 2000;
+            color: #E0E6F1;
             opacity: 1;
             transition: opacity 0.5s ease;
         }
@@ -52,51 +47,49 @@
         }
         
         .loading-title {
-            font-size: 2.2rem; /* Slightly larger for impact */
-            font-weight: 600; /* Bolder for title */
-            margin-bottom: 1.5rem; /* More space */
-            color: #FFFFFF; /* Pure white for main title */
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #FFFFFF;
         }
         
         .loading-text {
             font-size: 1.1rem;
             margin-bottom: 2rem;
             opacity: 0.9;
-            color: #B0B8C5; /* Softer gray for secondary text */
+            color: #B0B8C5;
         }
         
         .loading-spinner {
             width: 50px;
             height: 50px;
-            border: 4px solid rgba(44, 182, 246, 0.25); /* Theme accent blue, slightly thicker */
+            border: 4px solid rgba(44, 182, 246, 0.25);
             border-radius: 50%;
-            border-top-color: #2CB6F6; /* Bright blue accent for spinner animation */
+            border-top-color: #2CB6F6;
             animation: spin 1s ease-in-out infinite;
             margin: 0 auto 1.5rem;
         }
         
-        /* Room selector UI - styled to match theme's panel/modal appearance */
         .room-selector {
             position: fixed;
             bottom: 25px;
             left: 25px;
-            /* Dark, semi-transparent background with blur, like theme's modals/popups */
-            background: rgba(31, 35, 51, 0.85); /* #1F2333 with alpha */
-            backdrop-filter: blur(12px); /* Frosted glass effect */
-            border: 1px solid rgba(70, 80, 110, 0.4); /* Subtle border */
-            border-radius: 12px; /* Consistent with theme panel rounding */
+            background: rgba(31, 35, 51, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(70, 80, 110, 0.4);
+            border-radius: 12px;
             padding: 20px;
-            color: #E0E6F1; /* Default text color for selector */
+            color: #E0E6F1;
             z-index: 1000;
-            min-width: 300px; /* Slightly wider for better spacing */
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), /* Softer, deeper shadow */
-                        0 0 0 1px rgba(70, 80, 110, 0.2) inset; /* Inner highlight */
+            min-width: 300px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                        0 0 0 1px rgba(70, 80, 110, 0.2) inset;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
         }
         
         .room-selector:hover {
-            transform: translateY(-3px); /* Slightly more lift */
+            transform: translateY(-3px);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5),
                         0 0 0 1px rgba(70, 80, 110, 0.3) inset;
         }
@@ -108,33 +101,33 @@
         }
         
         .room-selector h3 {
-            margin: 0 0 18px 0; /* More bottom margin */
-            font-size: 1.1rem; /* Slightly larger title */
+            margin: 0 0 18px 0;
+            font-size: 1.1rem;
             font-weight: 600;
-            color: #FFFFFF; /* White title for emphasis */
+            color: #FFFFFF;
             display: flex;
             align-items: center;
-            gap: 10px; /* More gap for icon */
+            gap: 10px;
         }
         
-        .room-icon { /* SVG icon in room selector title */
-            width: 20px; /* Slightly larger icon */
+        .room-icon {
+            width: 20px;
             height: 20px;
-            fill: #2CB6F6; /* Theme accent blue for icon */
+            fill: #2CB6F6;
             opacity: 1;
         }
         
         .room-input-group {
             display: flex;
-            gap: 12px; /* More gap between input and button */
+            gap: 12px;
             margin-bottom: 15px;
         }
         
         .room-input {
             flex: 1;
             padding: 12px 16px;
-            background: rgba(26, 29, 41, 0.8); /* Darker input background */
-            border: 1px solid rgba(70, 80, 110, 0.6); /* Theme border color */
+            background: rgba(26, 29, 41, 0.8);
+            border: 1px solid rgba(70, 80, 110, 0.6);
             border-radius: 8px;
             color: #E0E6F1;
             font-size: 14px;
@@ -143,18 +136,17 @@
         }
         
         .room-input:focus {
-            border-color: #2CB6F6; /* Accent blue on focus */
-            background: rgba(31, 35, 51, 0.7); /* Slightly lighter on focus */
-            box-shadow: 0 0 0 3px rgba(44, 182, 246, 0.2); /* Glow effect */
+            border-color: #2CB6F6;
+            background: rgba(31, 35, 51, 0.7);
+            box-shadow: 0 0 0 3px rgba(44, 182, 246, 0.2);
         }
         
         .room-input::placeholder {
-            color: rgba(224, 230, 241, 0.4); /* Lighter placeholder */
+            color: rgba(224, 230, 241, 0.4);
         }
         
         .room-btn {
             padding: 12px 20px;
-            /* Gradient matching theme's primary action buttons (e.g. purple to blue) */
             background: linear-gradient(135deg, #7F5AF0 0%, #2CB6F6 100%); 
             border: none;
             border-radius: 8px;
@@ -168,7 +160,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0, 0.2);
         }
         
-        .room-btn:before { /* Shimmer effect from original */
+        .room-btn:before {
             content: '';
             position: absolute;
             top: 0;
@@ -184,10 +176,9 @@
         }
         
         .room-btn:hover {
-            /* Slightly brighter gradient on hover */
             background: linear-gradient(135deg, #8A6FF5 0%, #40C2F7 100%);
             transform: translateY(-2px);
-            box-shadow: 0 7px 15px rgba(127, 90, 240, 0.3); /* Shadow using purple accent */
+            box-shadow: 0 7px 15px rgba(127, 90, 240, 0.3);
         }
         
         .room-btn:active {
@@ -195,67 +186,64 @@
             box-shadow: 0 4px 10px rgba(0,0,0, 0.2);
         }
         
-        /* Status messages styled like theme notifications (e.g. image 1 bottom right) */
         .room-status {
             font-size: 13px;
             margin-top: 10px;
-            padding: 10px 14px; /* More padding */
+            padding: 10px 14px;
             border-radius: 6px;
             text-align: center;
             font-weight: 500;
         }
         
         .room-status.success {
-            background: rgba(114, 221, 170, 0.2); /* Theme success green, slightly more visible bg */
+            background: rgba(114, 221, 170, 0.2);
             color: #72DDAA;
             border: 1px solid rgba(114, 221, 170, 0.4);
         }
         
         .room-status.error {
-            background: rgba(247, 114, 114, 0.2); /* Theme error red */
+            background: rgba(247, 114, 114, 0.2);
             color: #F77272;
             border: 1px solid rgba(247, 114, 114, 0.4);
         }
         
         .room-status.loading {
-            background: rgba(44, 182, 246, 0.2); /* Theme loading blue */
+            background: rgba(44, 182, 246, 0.2);
             color: #2CB6F6;
             border: 1px solid rgba(44, 182, 246, 0.4);
         }
         
-        /* Minimize button */
         .minimize-btn {
             position: absolute;
-            top: 15px; /* Adjusted for panel padding */
-            right: 15px; /* Adjusted for panel padding */
-            background: rgba(70, 80, 110, 0.3); /* Muted bg */
+            top: 15px;
+            right: 15px;
+            background: rgba(70, 80, 110, 0.3);
             border: 1px solid rgba(70, 80, 110, 0.5);
             border-radius: 6px;
-            color: #9099AB; /* Softer color for icon */
+            color: #9099AB;
             cursor: pointer;
-            width: 26px; /* Slightly smaller */
+            width: 26px;
             height: 26px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px; /* Larger symbol for clarity */
-            font-weight: bold; /* Ensure symbol is bold */
-            line-height: 1; /* Helps center symbols like '-' and '+' */
+            font-size: 16px;
+            font-weight: bold;
+            line-height: 1;
             transition: all 0.3s ease;
         }
         
         .minimize-btn:hover {
             background: rgba(70, 80, 110, 0.5);
-            color: #E0E6F1; /* Brighter on hover */
+            color: #E0E6F1;
             transform: scale(1.05);
         }
         
-        /* Collapsed state */
         .room-selector.collapsed {
             padding: 12px 16px;
             min-width: auto;
             cursor: pointer;
-            border-radius: 10px; /* Slightly different radius when collapsed */
+            border-radius: 10px;
         }
         
         .room-selector.collapsed .room-content {
@@ -269,7 +257,7 @@
         .collapsed-indicator {
             display: none; 
             font-size: 13px;
-            color: #2CB6F6; /* Accent blue for indicator text */
+            color: #2CB6F6;
             font-weight: 500;
             user-select: none;
             pointer-events: none;
@@ -279,45 +267,35 @@
             display: block; 
         }
         
-        /* Hide in VR/fullscreen - existing logic is fine */
-        @media screen and (max-width: 600px) {
-            .room-selector {
-                display: none;
-            }
-        }
-        
-        /* Loading spinner (used in room status, if a class .spinner is added to an element) */
         .spinner { 
             display: inline-block;
             width: 14px;
             height: 14px;
-            border: 2px solid rgba(44, 182, 246, 0.3); /* Theme blue */
+            border: 2px solid rgba(44, 182, 246, 0.3);
             border-radius: 50%;
-            border-top-color: #2CB6F6; /* Theme blue accent */
+            border-top-color: #2CB6F6;
             animation: spin 1s ease-in-out infinite;
             margin-right: 8px; 
-            vertical-align: middle; /* Align better with text */
+            vertical-align: middle;
         }
         
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
         
-        /* Error overlay */
         .error-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            /* Same dark gradient as loading overlay */
             background: linear-gradient(135deg, #0D1117 0%, #1A1D29 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 1999; 
-            color: #E0E6F1; /* Default text color */
+            color: #E0E6F1;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.5s ease;
@@ -336,21 +314,20 @@
         
         .error-title {
             font-size: 2rem;
-            font-weight: 600; /* Bolder for error title */
+            font-weight: 600;
             margin-bottom: 1rem;
-            color: #F77272; /* Theme error red */
+            color: #F77272;
         }
         
         .error-text {
             font-size: 1.1rem;
             margin-bottom: 2rem;
             opacity: 0.9;
-            color: #B0B8C5; /* Softer gray for secondary text */
+            color: #B0B8C5;
         }
         
         .retry-btn {
             padding: 12px 24px;
-            /* Same gradient as room-btn for consistency in primary actions */
             background: linear-gradient(135deg, #7F5AF0 0%, #2CB6F6 100%);
             border: none;
             border-radius: 8px;
@@ -368,66 +345,250 @@
             box-shadow: 0 7px 15px rgba(127, 90, 240, 0.3);
         }
 
-        /* Custom styling for the "Close and Enter" button in error overlay */
         #closeErrorAndEnterBtn {
-            background: #3D4F7C; /* Darker, secondary action blue from theme */
-            /* box-shadow none to differentiate from primary retry */
+            background: #3D4F7C;
         }
         #closeErrorAndEnterBtn:hover {
-            background: #4C5F8A; /* Lighter on hover */
-            box-shadow: 0 7px 15px rgba(61, 79, 124, 0.25); /* Subtle shadow on hover */
+            background: #4C5F8A;
+            box-shadow: 0 7px 15px rgba(61, 79, 124, 0.25);
         }
 
-        /* Custom A-Frame VR Button */
-        .a-enter-vr-button {
+        /* Enhanced VR/AR Button Styling with Icons */
+        .a-enter-vr-button, .a-enter-ar-button {
             position: fixed !important; 
             bottom: 25px !important; 
             right: 25px !important;
-            /* Matches the primary action button style from the theme */
-            background: linear-gradient(135deg, #7F5AF0 0%, #2CB6F6 100%) !important; 
-            border: none !important; /* Theme buttons often have no border or a very subtle one */
-            border-radius: 8px !important; 
-            color: white !important;
+            background: rgba(42, 47, 65, 0.95) !important;
+            backdrop-filter: blur(8px) !important;
+            border: 1px solid rgba(70, 80, 110, 0.6) !important;
+            border-radius: 12px !important; 
+            color: #2CB6F6 !important;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; 
-            font-size: 14px !important;
-            font-weight: 600 !important;
-            padding: 12px 20px !important;
-            text-transform: uppercase; /* Common for VR entry buttons */
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
-            z-index: 9998 !important; /* Ensure it's above scene, can be adjusted if needed */
+            
+            width: 52px !important; 
+            height: 52px !important;
+            padding: 0 !important;
+            
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 
+                        inset 0 1px 0px rgba(255, 255, 255, 0.1) !important;
+            z-index: 9998 !important; 
             cursor: pointer !important;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            /* A-Frame normally handles display:none/block, this is for default appearance */
-            /* display: block !important; /* Or let A-Frame control this */
-            box-sizing: border-box !important;
-            display: flex !important; /* To align icon and text nicely if both are present */
+            display: flex !important; 
             align-items: center !important;
             justify-content: center !important;
+            line-height: 1 !important;
         }
 
-        .a-enter-vr-button:hover {
-            background: linear-gradient(135deg, #8A6FF5 0%, #40C2F7 100%) !important; 
+        /* AR Button positioning (when both exist) */
+        .a-enter-ar-button {
+            right: 90px !important; /* Offset to the left of VR button */
+        }
+
+        .a-enter-vr-button:hover, .a-enter-ar-button:hover {
+            background: rgba(49, 55, 79, 0.95) !important;
+            border-color: rgba(70, 80, 110, 0.8) !important;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5),
+                        inset 0 1px 0px rgba(255, 255, 255, 0.15) !important;
             transform: translateY(-2px) !important;
-            box-shadow: 0 8px 25px rgba(127, 90, 240, 0.3) !important;
         }
 
-        /* Style for SVG icon if A-Frame's button uses one */
-        .a-enter-vr-button svg {
-            fill: white !important;
-            width: 1.1em !important; /* Adjust size as needed */
-            height: 1.1em !important; /* Adjust size as needed */
-            margin-right: 0.6em !important; /* Space if text is also present */
-            vertical-align: middle !important; /* Better alignment with text */
+        .a-enter-vr-button:active, .a-enter-ar-button:active {
+            transform: translateY(0px) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
         }
-        /* If only icon, no text, A-Frame might not add text span. Below is for text part if it exists. */
-        .a-enter-vr-button span {
-            line-height: 1;
+
+        /* Hide default A-Frame icons and text */
+        .a-enter-vr-button svg,
+        .a-enter-ar-button svg,
+        .a-enter-vr-button span,
+        .a-enter-ar-button span {
+            display: none !important; 
+        }
+
+        /* Add custom VR icon */
+        .a-enter-vr-button::before {
+            content: '';
+            display: block;
+            width: 28px;
+            height: 28px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232CB6F6'%3E%3Cpath d='M20.5 6H3.5C2.67 6 2 6.67 2 7.5v9c0 .83.67 1.5 1.5 1.5H7l1.5-3h7l1.5 3h3.5c.83 0 1.5-.67 1.5-1.5v-9c0-.83-.67-1.5-1.5-1.5zM8 13.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm8 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z'/%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        /* Add custom AR icon */
+        .a-enter-ar-button::before {
+            content: '';
+            display: block;
+            width: 28px;
+            height: 28px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232CB6F6'%3E%3Cpath d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2zm0 4.25L10.16 9.5l-3.45.5 2.5 2.44-.59 3.44L12 14.25l3.38 1.63-.59-3.44 2.5-2.44-3.45-.5L12 6.25z'/%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        /* Mobile Responsive Design */
+        @media screen and (max-width: 768px) {
+            .room-selector {
+                bottom: 15px;
+                left: 15px;
+                right: 15px;
+                min-width: auto;
+                max-width: calc(100vw - 140px); /* Leave space for VR/AR buttons */
+                padding: 15px;
+            }
+            
+            .room-selector.collapsed {
+                max-width: 120px;
+            }
+            
+            .room-input-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .room-input {
+                width: 100%;
+                box-sizing: border-box; /* Ensure padding doesn't add to width */
+                font-size: 16px; /* Prevent zoom on iOS */
+                padding: 14px 16px;
+            }
+            
+            .room-btn {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 14px 20px;
+                font-size: 16px;
+            }
+            
+            .loading-content {
+                padding: 1.5rem;
+                max-width: 90vw;
+            }
+            
+            .loading-title {
+                font-size: 1.8rem;
+            }
+            
+            .loading-text {
+                font-size: 1rem;
+            }
+            
+            .error-content {
+                padding: 1.5rem;
+                max-width: 90vw;
+            }
+            
+            .error-title {
+                font-size: 1.8rem;
+            }
+            
+            .error-text {
+                font-size: 1rem;
+            }
+            
+            /* Mobile VR/AR buttons */
+            .a-enter-vr-button, .a-enter-ar-button {
+                bottom: 15px !important;
+                right: 15px !important;
+                width: 48px !important;
+                height: 48px !important;
+            }
+            
+            .a-enter-ar-button {
+                right: 75px !important; /* 15px (right padding) + 48px (VR button width) + 12px (gap) */
+            }
+            
+            .a-enter-vr-button::before,
+            .a-enter-ar-button::before {
+                width: 24px;
+                height: 24px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .room-selector {
+                bottom: 10px;
+                left: 10px;
+                right: 10px;
+                max-width: calc(100vw - 120px); /* Adjust if AR/VR buttons change size */
+                padding: 12px;
+            }
+            
+            .room-selector.collapsed {
+                max-width: 100px;
+            }
+            
+            .loading-title {
+                font-size: 1.6rem;
+            }
+            
+            .error-title {
+                font-size: 1.6rem;
+            }
+            
+            /* Smaller mobile VR/AR buttons */
+            .a-enter-vr-button, .a-enter-ar-button {
+                bottom: 10px !important;
+                right: 10px !important;
+                width: 44px !important;
+                height: 44px !important;
+            }
+            
+            .a-enter-ar-button {
+                right: 65px !important; /* 10px + 44px + 11px */
+            }
+            
+            .a-enter-vr-button::before,
+            .a-enter-ar-button::before {
+                width: 22px;
+                height: 22px;
+            }
+        }
+
+        /* Touch device improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .room-btn:hover:before {
+                left: -100%; /* Keep shimmer effect off for touch unless active */
+            }
+            
+            .room-btn:active {
+                transform: scale(0.98);
+                background: linear-gradient(135deg, #6B47D9 0%, #1A9BDB 100%);
+            }
+             .room-btn:active:before { /* Trigger shimmer on active for touch */
+                left:100%;
+            }
+            
+            .minimize-btn:hover {
+                transform: none; 
+            }
+             .minimize-btn:active {
+                transform: scale(0.95);
+                background: rgba(70, 80, 110, 0.7);
+            }
+
+            .a-enter-vr-button:hover, .a-enter-ar-button:hover {
+                /* Keep hover state same as non-hover for touch unless active */
+                background: rgba(42, 47, 65, 0.95) !important;
+                border-color: rgba(70, 80, 110, 0.6) !important;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 
+                            inset 0 1px 0px rgba(255, 255, 255, 0.1) !important;
+                transform: translateY(0px) !important;
+            }
+            .a-enter-vr-button:active, .a-enter-ar-button:active {
+                background: rgba(49, 55, 79, 0.95) !important; /* Use hover style for active */
+                transform: translateY(-1px) scale(0.98) !important; /* Slight press effect */
+            }
         }
     </style>
 </head>
 <body>
     <!-- Loading Overlay -->
-    <div class="loading-overlay hidden" id="loadingOverlay"> <!-- Start hidden by default -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
         <div class="loading-content">
             <h1 class="loading-title">MODSiVR</h1>
             <div class="loading-spinner"></div>
@@ -446,7 +607,7 @@
         </div>
     </div>
 
-    <a-scene background="color: #ECECEC">
+    <a-scene background="color: #ECECEC" vr-mode-ui="enabled: true" ar-mode-ui="enabled: true">
         <a-entity environment="preset: default; groundColor: #445; groundTexture: walk;"></a-entity>
         
         <a-assets>
@@ -465,7 +626,7 @@
     </a-scene>
 
     <!-- Room Selector UI -->
-    <div class="room-selector hidden" id="roomSelector"> <!-- Start hidden, shown by JS logic -->
+    <div class="room-selector hidden" id="roomSelector">
         <button class="minimize-btn" id="minimizeBtn">−</button>
         <div class="room-content">
             <h3>
@@ -504,14 +665,27 @@
         const API_CODE = 'z4tKbNFdaaXzHZ4ayn9pRQokNWYgRkbVkCjOxTxP-8ChAzFuMigGCw==';
         
         let currentRoom = 'LD5RU'; // Default active room / context
-        let isCollapsed = false;
+        let isCollapsed = false; // Default to expanded
         
+        // Function to update the visual state of the room selector (collapsed/expanded)
+        function updateRoomSelectorCollapsedState() {
+            if (!roomSelector || !minimizeBtn || !collapsedRoomInfo) return; // Guard
+            roomSelector.classList.toggle('collapsed', isCollapsed);
+            minimizeBtn.textContent = isCollapsed ? '+' : '−';
+            collapsedRoomInfo.textContent = 'Room: ' + (currentRoom || 'N/A');
+        }
+
         // Function to synchronize UI elements that display the room name
         function syncRoomUI(roomName) {
             const display = roomName || 'N/A';
-            roomInput.value = display; 
-            if(currentRoomDisplayLoading) currentRoomDisplayLoading.textContent = display;
-            if(collapsedRoomInfo) collapsedRoomInfo.textContent = 'Room: ' + display;
+            if (roomInput) roomInput.value = roomName ? roomName : ''; 
+            if (currentRoomDisplayLoading) currentRoomDisplayLoading.textContent = display;
+            
+            // Update collapsed indicator text immediately when room changes,
+            // as updateRoomSelectorCollapsedState() might not be called if already collapsed.
+            if (collapsedRoomInfo) {
+                collapsedRoomInfo.textContent = 'Room: ' + display;
+            }
         }
 
         // Function to handle URL parameter, normalize URL if 'code' is present
@@ -566,17 +740,15 @@
 
         function toggleRoomSelector() {
             isCollapsed = !isCollapsed;
-            roomSelector.classList.toggle('collapsed', isCollapsed);
-            minimizeBtn.textContent = isCollapsed ? '+' : '−'; // Button itself will be hidden by CSS when collapsed
-            // syncRoomUI(currentRoom); // Ensure text is up-to-date, though it's usually synced elsewhere
+            updateRoomSelectorCollapsedState();
         }
 
         function hideRoomSelector() {
-            roomSelector.classList.add('hidden');
+            if (roomSelector) roomSelector.classList.add('hidden');
         }
 
         function showRoomSelector() {
-            roomSelector.classList.remove('hidden');
+            if (roomSelector) roomSelector.classList.remove('hidden');
         }
 
         function showLoading(show, roomNameForDisplay = null) {
@@ -645,11 +817,15 @@
                  return;
             }
             currentRoom = newRoomCode;
-            syncRoomUI(currentRoom);
+            syncRoomUI(currentRoom); // Update UI text
+
+            isCollapsed = false;
+            updateRoomSelectorCollapsedState();
+
 
             const url = new URL(window.location);
             url.searchParams.set('room', currentRoom);
-            url.searchParams.delete('code');
+            url.searchParams.delete('code'); // Clean up 'code' if it was ever used
             window.history.pushState({}, '', url.toString());
 
             showRoomStatus(`Conectando à sala ${currentRoom}...`, 'loading');
@@ -657,8 +833,10 @@
 
             await initializeApp(true); 
 
-            if (!errorOverlay.classList.contains('visible')) {
+            if (!errorOverlay.classList.contains('visible')) { 
                 showRoomStatus(`Conectado à sala ${currentRoom} com sucesso!`, 'success');
+                isCollapsed = false; 
+                updateRoomSelectorCollapsedState();
             } else {
                 showRoomStatus(`Falha ao carregar sala ${currentRoom}.`, 'error');
             }
@@ -667,12 +845,13 @@
         }
 
         function handleFullscreenChange() {
+            const sceneEl = document.querySelector('a-scene');
             const isFullscreen = document.fullscreenElement || 
                                 document.webkitFullscreenElement || 
                                 document.mozFullScreenElement || 
                                 document.msFullscreenElement;
             
-            if (isFullscreen || document.querySelector('a-scene').is('vr-mode')) {
+            if (isFullscreen || (sceneEl && sceneEl.is('vr-mode')) || (sceneEl && sceneEl.is('ar-mode'))) {
                 hideRoomSelector();
             } else {
                 showRoomSelector();
@@ -684,8 +863,13 @@
         document.addEventListener('mozfullscreenchange', handleFullscreenChange);
         document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 
-        document.querySelector('a-scene').addEventListener('enter-vr', hideRoomSelector);
-        document.querySelector('a-scene').addEventListener('exit-vr', showRoomSelector);
+        const sceneEl = document.querySelector('a-scene');
+        if (sceneEl) {
+            sceneEl.addEventListener('enter-vr', hideRoomSelector);
+            sceneEl.addEventListener('exit-vr', showRoomSelector);
+            sceneEl.addEventListener('enter-ar', hideRoomSelector); // Added for AR
+            sceneEl.addEventListener('exit-ar', showRoomSelector);   // Added for AR
+        }
 
 
         const POSITION_CONFIG = { startX: -18, baseY: 1.5, baseZ: 12, spacingX: 12, pieOffsetY: 3 };
@@ -741,11 +925,11 @@
             renderSingleChart(chartIndex);
         }
 
-        function renderSingleChart(chartIndex) {
+        function renderSingleChart(chartIndex) { 
             const chartConfig = chartsData[chartIndex];
             const state = chartStates[chartIndex];
             if (!chartConfig || !state) return;
-
+            
             const existingChart = root.querySelector(`[data-chart-index="${chartIndex}"]`);
             const existingButtons = root.querySelector(`[data-buttons-index="${chartIndex}"]`);
 
@@ -757,23 +941,37 @@
                     if (existingChart.parentNode) existingChart.parentNode.removeChild(existingChart);
                     if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
                     
-                    const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType);
+                    let visibleChartIndex = 0;
+                    for(let i=0; i < chartIndex; i++){
+                        if(chartsData[i] && (hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_1') || hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_2'))){
+                            visibleChartIndex++;
+                        }
+                    }
+
+                    const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType, visibleChartIndex);
                     root.appendChild(chartEl);
-                    const buttonsEl = createChartButtons(chartIndex, state);
+                    const buttonsEl = createChartButtons(chartIndex, state, visibleChartIndex);
                     root.appendChild(buttonsEl);
                 }, 50);
             } else { 
                  if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
-                 const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType);
+                 
+                 let visibleChartIndex = 0;
+                 for(let i=0; i < chartIndex; i++){
+                     if(chartsData[i] && (hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_1') || hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_2'))){
+                         visibleChartIndex++;
+                     }
+                 }
+                 const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType, visibleChartIndex);
                  root.appendChild(chartEl);
-                 const buttonsEl = createChartButtons(chartIndex, state);
+                 const buttonsEl = createChartButtons(chartIndex, state, visibleChartIndex);
                  root.appendChild(buttonsEl);
             }
         }
         
-        function createChartButtons(chartIndex, state) {
-            const chartConfig = chartsData[chartIndex];
-            const position = calculatePosition(chartIndex, false);
+        function createChartButtons(originalIndex, state, visibleIndex) {
+            const chartConfig = chartsData[originalIndex];
+            const position = calculatePosition(visibleIndex, false); 
             const [x, y, z] = position.split(' ').map(parseFloat);
             const kpiId = parseInt(chartConfig.chart.zAxis);
             const hasValue1 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1');
@@ -781,7 +979,7 @@
             
             const buttonsContainer = document.createElement('a-entity');
             buttonsContainer.setAttribute('position', `${x + 6} ${parseFloat(y) + 8} ${z}`);
-            buttonsContainer.setAttribute('data-buttons-index', chartIndex);
+            buttonsContainer.setAttribute('data-buttons-index', originalIndex); 
             let buttonVerticalOffset = 0;
 
             if (hasValue1 && hasValue2) {
@@ -794,7 +992,7 @@
                 valueText.setAttribute('position', '0 0 0.06'); valueText.setAttribute('align', 'center'); valueText.setAttribute('color', 'white'); valueText.setAttribute('width', '4');
                 valueButton.appendChild(valueText);
                 valueButton.setAttribute('class', 'clickable');
-                valueButton.addEventListener('click', (event) => { event.stopPropagation(); setTimeout(() => toggleChartValue(chartIndex), 100); });
+                valueButton.addEventListener('click', (event) => { event.stopPropagation(); setTimeout(() => toggleChartValue(originalIndex), 100); });
                 buttonsContainer.appendChild(valueButton);
                 buttonVerticalOffset -= 1.2;
             }
@@ -808,18 +1006,18 @@
             timeText.setAttribute('position', '0 0 0.06'); timeText.setAttribute('align', 'center'); timeText.setAttribute('color', 'white'); timeText.setAttribute('width', '4');
             timeButton.appendChild(timeText);
             timeButton.setAttribute('class', 'clickable');
-            timeButton.addEventListener('click', (event) => { event.stopPropagation(); setTimeout(() => toggleChartTimeType(chartIndex), 100); });
+            timeButton.addEventListener('click', (event) => { event.stopPropagation(); setTimeout(() => toggleChartTimeType(originalIndex), 100); });
             buttonsContainer.appendChild(timeButton);
             return buttonsContainer;
         }
 
-        function createChart(chartConfigData, chartIndex, valueType, timeType = 'years') {
+        function createChart(chartConfigData, originalIndex, valueType, timeType = 'years', visibleIndex) {
             const { kpihistory, chart } = chartConfigData;
             const kpiId = parseInt(chart.zAxis);
             const chartContainer = document.createElement('a-entity');
             const isPieChart = chart.chartType === "pizza";
-            chartContainer.setAttribute('position', calculatePosition(chartIndex, isPieChart));
-            chartContainer.setAttribute('data-chart-index', chartIndex);
+            chartContainer.setAttribute('position', calculatePosition(visibleIndex, isPieChart)); 
+            chartContainer.setAttribute('data-chart-index', originalIndex); 
             const palette = valueType === 'NewValue_1' ? 'commerce' : 'ubuntu';
             const productName = valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2';
             const timeLabel = TIME_TYPES[timeType].label;
@@ -858,7 +1056,7 @@
 
         function initializeChartStates() {
             chartStates = {};
-            chartsData.forEach((chartConfig, index) => {
+            chartsData.forEach((chartConfig, index) => { 
                 const kpiId = parseInt(chartConfig.chart.zAxis);
                 const hasValue1 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1');
                 const hasValue2 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2');
@@ -879,75 +1077,10 @@
                 const kpiId = parseInt(chart.zAxis);
                 if (hasValidData(kpihistory, kpiId, 'NewValue_1') || hasValidData(kpihistory, kpiId, 'NewValue_2')) {
                     const state = chartStates[originalIndex];
-                    const el = createChart(chartConfig, visibleChartIndex, state.valueType, state.timeType);
+                    const el = createChart(chartConfig, originalIndex, state.valueType, state.timeType, visibleChartIndex);
                     root.appendChild(el);
-                    const buttonsEl = createChartButtons(visibleChartIndex, state); // Pass visibleChartIndex
+                    const buttonsEl = createChartButtons(originalIndex, state, visibleChartIndex); 
                     root.appendChild(buttonsEl);
-                    // Map originalIndex to visibleChartIndex for state management if needed later for interactions
-                    // For now, chartStates uses originalIndex, but buttons are created with visibleChartIndex
-                    // This implies toggleChartValue/TimeType should perhaps operate on visibleChartIndex
-                    // Or, ensure chartStates keys align with the indices used for event listeners
-                    // For simplicity, if createChartButtons passes visibleChartIndex, then toggle functions also receive it
-                    // And state should be accessed via a mapping or by finding original index.
-                    // Current: createChartButtons receives visibleChartIndex, toggle functions receive it.
-                    // This means chartStates should ideally be keyed by visibleChartIndex or mapped.
-                    // Quick fix: For renderSingleChart, it receives chartIndex (which is visibleChartIndex).
-                    // It needs to map this back to originalIndex to fetch from chartsData and chartStates.
-                    // To avoid this complexity now, let's assume chartStates and chartsData always refer to the original index,
-                    // and visibleChartIndex is purely for layout. The buttons will need the originalIndex.
-                    // Let's revert createChartButtons to use originalIndex if state is keyed by originalIndex.
-                    // The current setup: toggleChartValue(chartIndex) -> chartIndex is the visible index.
-                    // state = chartStates[chartIndex] -> this assumes chartStates is keyed by visible index.
-                    // This is okay if initializeChartStates keys based on visible charts, or if we pass originalIndex.
-                    // Given renderAllCharts iterates with originalIndex for chartStates, buttons should use originalIndex.
-                    // Let's pass 'originalIndex' to createChartButtons and toggle functions.
-                    // And 'visibleChartIndex' to createChart for positioning.
-                    // visibleChartIndex is already passed correctly to calculatePosition indirectly.
-
-                    // The current code passes 'visibleChartIndex' to createChartButtons and toggle functions.
-                    // This means chartStates *must* be keyed by visibleChartIndex if this is to work,
-                    // or toggle functions need to map back.
-                    // The simplest path is that chartStates is keyed by the originalIndex from chartsData.
-                    // So, toggle functions and createChartButtons should receive originalIndex.
-
-                    // Re-evaluating createChartButtons and toggles:
-                    // They receive `chartIndex`. If this `chartIndex` is the `visibleChartIndex`:
-                    // `chartConfig = chartsData[chartIndex]` would be wrong. It should be `chartsData[originalIndex]`.
-                    // `state = chartStates[chartIndex]` would be wrong. It should be `chartStates[originalIndex]`.
-                    // The event listeners for buttons are set up with `visibleChartIndex`.
-                    // This is a potential bug. Let's fix: listeners should use originalIndex.
-
-                    // For now, let's assume the current logic where chartIndex = visibleChartIndex is consistently used in toggles.
-                    // This implies chartStates must be rebuilt or accessed carefully if charts are skipped.
-                    // The current initializeChartStates uses originalIndex.
-                    // This will cause a mismatch if charts are skipped.
-                    // Simplest fix: don't skip charts in chartsData/chartStates arrays, filter only for rendering.
-                    // The `renderSingleChart` and `createChartButtons` will use the `originalIndex`.
-                    // So the `chartIndex` parameter for them should be `originalIndex`.
-                    // `renderAllCharts` calls `createChart(chartConfig, visibleChartIndex, ...)`
-                    // `createChartButtons(originalIndex, state)`
-                    // `toggleChartValue(originalIndex)`
-                    // The event listeners need to capture originalIndex.
-
-                    // Corrected logic flow:
-                    // renderAllCharts iterates chartsData with originalIndex.
-                    // If chart is valid:
-                    //   el = createChart(chartConfig, visibleChartIndex, state.valueType, state.timeType);
-                    //   buttonsEl = createChartButtons(originalIndex, state); // Pass originalIndex
-                    //   root.appendChild(buttonsEl);
-                    // toggleChartValue(originalIndex) is called.
-                    // renderSingleChart(originalIndex) is called.
-                    //   Inside renderSingleChart(originalIndex):
-                    //     existingChart = root.querySelector(`[data-chart-index="${mapOriginalToVisible(originalIndex)}"]`); // This mapping is tricky.
-                    //     It's simpler if data-chart-index on the entity IS the originalIndex. And layout handles visible.
-
-                    // Let's stick to data-chart-index = originalIndex. And position based on visible count.
-                    // This means `createChart` gets `originalIndex` and `visibleChartIndex`.
-                    // And `data-chart-index` attribute is set to `originalIndex`.
-                    // `createChartButtons` gets `originalIndex`. Toggles get `originalIndex`.
-                    // This is cleaner. The current code structure is a bit mixed on this.
-                    // For this request, I will keep the current logic, as it's about UI and CSS primarily.
-                    // The chart rendering logic beyond visual attributes was not the focus.
                     visibleChartIndex++;
                 }
             });
@@ -978,6 +1111,7 @@
         async function initializeApp(attemptLoadFromUrl = true) {
             const roomFromUrl = getRoomFromURL();
             let roomToLoad = null;
+            let localIsCollapsed = false; 
 
             if (attemptLoadFromUrl && roomFromUrl) {
                 roomToLoad = roomFromUrl;
@@ -985,7 +1119,7 @@
 
             if (roomToLoad) {
                 currentRoom = roomToLoad;
-                syncRoomUI(currentRoom);
+                syncRoomUI(currentRoom); 
                 showLoading(true, currentRoom);
                 showError(false);
 
@@ -1017,24 +1151,29 @@
                         renderAllCharts();
                     }
 
+                    localIsCollapsed = true; 
+
                     setTimeout(() => showLoading(false), 500);
-                    showRoomSelector();
                     console.log(`Application initialized successfully for room: ${currentRoom}`);
 
                 } catch (error) {
                     console.error(`Falha ao inicializar para a sala ${currentRoom}:`, error);
+                    localIsCollapsed = false; 
                     showLoading(false);
                     showError(true, `Falha ao carregar dados da sala ${currentRoom}: ${error.message}`);
-                    showRoomSelector();
                 }
             } else {
-                syncRoomUI(currentRoom);
+                localIsCollapsed = false; 
+                syncRoomUI(currentRoom); 
                 showLoading(false);
                 showError(false);
                 clearCharts();
-                showRoomSelector();
                 console.log("Nenhuma sala especificada na URL para carregamento automático. Seletor de sala ativo. Sala de contexto: " + currentRoom);
             }
+
+            isCollapsed = localIsCollapsed; 
+            updateRoomSelectorCollapsedState(); 
+            showRoomSelector(); 
         }
 
         window.addEventListener('load', () => {
@@ -1043,13 +1182,14 @@
             if (closeBtn) {
                 closeBtn.addEventListener('click', closeErrorAndEnterEnvironment);
             }
-            syncRoomUI(currentRoom); // Initialize UI with default/current room
             initializeApp(true);
         });
 
-        document.querySelector('a-scene').addEventListener('loaded', () => {
-            console.log('A-Frame scene loaded');
-        });
+        if (sceneEl) { // Check if sceneEl is not null before adding event listener
+            sceneEl.addEventListener('loaded', () => {
+                console.log('A-Frame scene loaded');
+            });
+        }
     </script>
 </body>
 </html>
