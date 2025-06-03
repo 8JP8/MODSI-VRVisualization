@@ -1,5 +1,3 @@
-// ...existing code from index.html <script> block...
-
 const root = document.getElementById('charts-root');
 
 // UI elements
@@ -8,20 +6,214 @@ const roomInput = document.getElementById('roomInput');
 const connectBtn = document.getElementById('connectBtn');
 const roomStatus = document.getElementById('roomStatus');
 const minimizeBtn = document.getElementById('minimizeBtn');
-const currentRoomDisplayLoading = document.getElementById('currentRoomDisplayLoading'); // For loading overlay
-const collapsedRoomInfo = document.getElementById('collapsedRoomInfo'); // For minimized room selector
+const currentRoomDisplayLoading = document.getElementById('currentRoomDisplayLoading');
+const collapsedRoomInfo = document.getElementById('collapsedRoomInfo');
 const loadingOverlay = document.getElementById('loadingOverlay');
 const errorOverlay = document.getElementById('errorOverlay');
 const errorMessage = document.getElementById('errorMessage');
-const roomInfo = document.getElementById('roomInfo'); // For loading screen additional info
+const roomInfo = document.getElementById('roomInfo');
+const arInstructions = document.getElementById('arInstructions');
+const closeArInstructions = document.getElementById('closeArInstructions');
+
+// AR Elements
+const sceneEl = document.querySelector('a-scene');
+const skyEl = document.getElementById('sky');
+const environmentEl = document.getElementById('environment');
+const vrCameraEl = document.getElementById('vrCamera');
+const arCameraEl = document.getElementById('arCamera');
+const arMarkerEl = document.getElementById('arMarker');
 
 // API Configuration
 const API_BASE_URL = 'https://modsi-api-ffhhfgecfdehhscv.spaincentral-01.azurewebsites.net/api/Room/Get/';
 const API_CODE = 'z4tKbNFdaaXzHZ4ayn9pRQokNWYgRkbVkCjOxTxP-8ChAzFuMigGCw==';
 
-let currentRoom = 'LD5RU'; // Default active room / context
-let isCollapsed = false; // Default to expanded
+let currentRoom = 'LD5RU';
+let isCollapsed = false;
+let isARMode = false;
+let arInstructionsShown = false;
 
+// AR Mode Management
+function enterARMode() {
+    console.log('Entering AR mode...');
+    isARMode = true;
+    document.body.classList.add('ar-mode');
+    
+    // Hide VR environment elements
+    if (skyEl) skyEl.setAttribute('visible', 'false');
+    if (environmentEl) environmentEl.setAttribute('visible', 'false');
+    
+    // Switch cameras
+    if (vrCameraEl) vrCameraEl.setAttribute('visible', 'false');
+    if (arCameraEl) {
+        arCameraEl.setAttribute('visible', 'true');
+        arCameraEl.setAttribute('camera', 'active: true');
+    }
+    
+    // Hide UI elements
+    hideRoomSelector();
+    
+    // Adjust chart positions for AR
+    adjustChartsForAR();
+    
+    // Show AR instructions if first time
+    if (!arInstructionsShown) {
+        showARInstructions();
+        arInstructionsShown = true;
+    }
+    
+    console.log('AR mode activated');
+}
+
+function exitARMode() {
+    console.log('Exiting AR mode...');
+    isARMode = false;
+    document.body.classList.remove('ar-mode');
+    
+    // Show VR environment elements
+    if (skyEl) skyEl.setAttribute('visible', 'true');
+    if (environmentEl) environmentEl.setAttribute('visible', 'true');
+    
+    // Switch cameras back
+    if (arCameraEl) {
+        arCameraEl.setAttribute('visible', 'false');
+        arCameraEl.setAttribute('camera', 'active: false');
+    }
+    if (vrCameraEl) vrCameraEl.setAttribute('visible', 'true');
+    
+    // Show UI elements
+    showRoomSelector();
+    
+    // Restore chart positions for VR/Desktop
+    adjustChartsForVR();
+    
+    console.log('AR mode deactivated');
+}
+
+function showARInstructions() {
+    if (arInstructions) {
+        arInstructions.classList.remove('hidden');
+    }
+}
+
+function hideARInstructions() {
+    if (arInstructions) {
+        arInstructions.classList.add('hidden');
+    }
+}
+
+function adjustChartsForAR() {
+    // Adjust chart positions and scales for AR mode
+    const charts = root.querySelectorAll('[data-chart-index]');
+    const buttons = root.querySelectorAll('[data-buttons-index]');
+    
+    charts.forEach((chart, index) => {
+        // Scale down charts for AR viewing
+        chart.setAttribute('scale', '0.3 0.3 0.3');
+        
+        // Position charts in a more compact AR-friendly layout
+        const arX = -2 + (index * 1.5);
+        const arY = 0;
+        const arZ = -2;
+        chart.setAttribute('position', `${arX} ${arY} ${arZ}`);
+        
+        // Make charts face the camera more directly in AR
+        chart.setAttribute('rotation', '0 0 0');
+    });
+    
+    buttons.forEach((buttonGroup, index) => {
+        // Scale down buttons for AR
+        buttonGroup.setAttribute('scale', '0.5 0.5 0.5');
+        
+        // Position buttons relative to charts
+        const arX = -2 + (index * 1.5);
+        const arY = 1.2;
+        const arZ = -2;
+        buttonGroup.setAttribute('position', `${arX} ${arY} ${arZ}`);
+    });
+}
+
+function adjustChartsForVR() {
+    // Restore original VR/Desktop positions and scales
+    renderAllCharts();
+}
+
+// Event Listeners for AR mode
+if (closeArInstructions) {
+    closeArInstructions.addEventListener('click', hideARInstructions);
+}
+
+// Enhanced A-Frame event listeners for AR
+if (sceneEl) {
+    sceneEl.addEventListener('enter-ar', () => {
+        console.log('A-Frame enter-ar event triggered');
+        setTimeout(enterARMode, 100); // Small delay to ensure proper initialization
+    });
+    
+    sceneEl.addEventListener('exit-ar', () => {
+        console.log('A-Frame exit-ar event triggered');
+        exitARMode();
+    });
+    
+    // Additional AR.js specific events
+    sceneEl.addEventListener('arjs-video-loaded', () => {
+        console.log('AR.js video loaded');
+    });
+    
+    sceneEl.addEventListener('arjs-nft-loaded', () => {
+        console.log('AR.js NFT loaded');
+    });
+    
+    // Handle marker detection for AR.js
+    sceneEl.addEventListener('markerFound', () => {
+        console.log('AR marker found');
+        if (isARMode) {
+            // Make charts visible when marker is detected
+            const charts = root.querySelectorAll('[data-chart-index]');
+            charts.forEach(chart => {
+                chart.setAttribute('visible', 'true');
+            });
+        }
+    });
+    
+    sceneEl.addEventListener('markerLost', () => {
+        console.log('AR marker lost');
+        if (isARMode) {
+            // Optionally hide charts when marker is lost
+            const charts = root.querySelectorAll('[data-chart-index]');
+            charts.forEach(chart => {
+                chart.setAttribute('visible', 'false');
+            });
+        }
+    });
+}
+
+// Enhanced fullscreen and mode detection
+function handleFullscreenChange() {
+    const isFullscreen = document.fullscreenElement ||
+                        document.webkitFullscreenElement ||
+                        document.mozFullScreenElement ||
+                        document.msFullscreenElement;
+
+    const isVRMode = sceneEl && sceneEl.is('vr-mode');
+    const currentARMode = sceneEl && sceneEl.is('ar-mode');
+
+    // Update AR mode state if needed
+    if (currentARMode !== isARMode) {
+        if (currentARMode) {
+            enterARMode();
+        } else if (isARMode) {
+            exitARMode();
+        }
+    }
+
+    if (isFullscreen || isVRMode || currentARMode) {
+        hideRoomSelector();
+    } else if (!isARMode) {
+        showRoomSelector();
+    }
+}
+
+// Room Management Functions
 function updateRoomSelectorCollapsedState() {
     if (!roomSelector || !minimizeBtn || !collapsedRoomInfo) return;
     roomSelector.classList.toggle('collapsed', isCollapsed);
@@ -97,7 +289,7 @@ function hideRoomSelector() {
 }
 
 function showRoomSelector() {
-    if (roomSelector) roomSelector.classList.remove('hidden');
+    if (roomSelector && !isARMode) roomSelector.classList.remove('hidden');
 }
 
 function showLoading(show, roomNameForDisplay = null) {
@@ -134,6 +326,7 @@ function retryConnection() {
     initializeApp(true);
 }
 
+// Event Listeners
 minimizeBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     toggleRoomSelector();
@@ -192,72 +385,21 @@ async function connectToRoom(newRoomCode) {
     connectBtn.disabled = false;
 }
 
-function handleFullscreenChange() {
-    const sceneEl = document.querySelector('a-scene');
-    const isFullscreen = document.fullscreenElement ||
-                        document.webkitFullscreenElement ||
-                        document.mozFullScreenElement ||
-                        document.msFullscreenElement;
-
-    if (isFullscreen || (sceneEl && sceneEl.is('vr-mode')) || (sceneEl && sceneEl.is('ar-mode'))) {
-        hideRoomSelector();
-    } else {
-        showRoomSelector();
-    }
-}
-
+// Fullscreen and mode event listeners
 document.addEventListener('fullscreenchange', handleFullscreenChange);
 document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
 document.addEventListener('mozfullscreenchange', handleFullscreenChange);
 document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 
-const sceneEl = document.querySelector('a-scene');
 if (sceneEl) {
     sceneEl.addEventListener('enter-vr', hideRoomSelector);
     sceneEl.addEventListener('exit-vr', showRoomSelector);
-    sceneEl.addEventListener('enter-ar', hideRoomSelector);
-    sceneEl.addEventListener('exit-ar', showRoomSelector);
-}
-
-// --- AR MODE SUPPORT ---
-
-// Helper to hide/show skybox and environment in AR mode only
-function setSceneBackgroundVisibility(visible) {
-    const sky = document.getElementById('vr-sky');
-    const env = document.getElementById('vr-environment');
-    if (sky) {
-        sky.setAttribute('visible', visible);
-        // In AR, also set sky color to transparent to avoid white background
-        if (!visible) {
-            sky.setAttribute('color', 'transparent');
-            sky.setAttribute('material', 'color: transparent; opacity: 0;');
-        } else {
-            sky.setAttribute('color', '#ECECEC');
-            sky.setAttribute('material', 'color: #ECECEC; opacity: 1;');
-        }
-    }
-    if (env) {
-        env.setAttribute('visible', visible);
-    }
-}
-
-// Listen for AR mode events to toggle skybox/environment and adjust scene for AR
-if (sceneEl) {
-    setSceneBackgroundVisibility(true);
-
-    sceneEl.addEventListener('enter-ar', () => {
-        // Delay to ensure AR camera feed is ready before hiding backgrounds
-        setTimeout(() => {
-            setSceneBackgroundVisibility(false);
-        }, 100);
-        hideRoomSelector();
-    });
-    sceneEl.addEventListener('exit-ar', () => {
-        setSceneBackgroundVisibility(true);
-        showRoomSelector();
+    sceneEl.addEventListener('loaded', () => {
+        console.log('A-Frame scene loaded');
     });
 }
 
+// Chart Configuration and Data Processing
 const POSITION_CONFIG = { startX: -18, baseY: 1.5, baseZ: 12, spacingX: 12, pieOffsetY: 3 };
 const TIME_TYPES = { 'years': { label: 'Anos', next: 'months' }, 'months': { label: 'Meses', next: 'days' }, 'days': { label: 'Dias', next: 'years' } };
 const JSON_TIME_MAPPING = { 'Year': 'years', 'Month': 'months', 'Day': 'days', 'year': 'years', 'month': 'months', 'day': 'days', 'years': 'years', 'months': 'months', 'days': 'days' };
@@ -338,6 +480,11 @@ function renderSingleChart(chartIndex) {
             root.appendChild(chartEl);
             const buttonsEl = createChartButtons(chartIndex, state, visibleChartIndex);
             root.appendChild(buttonsEl);
+            
+            // Apply AR adjustments if in AR mode
+            if (isARMode) {
+                setTimeout(adjustChartsForAR, 100);
+            }
         }, 50);
     } else {
          if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
@@ -352,6 +499,11 @@ function renderSingleChart(chartIndex) {
          root.appendChild(chartEl);
          const buttonsEl = createChartButtons(chartIndex, state, visibleChartIndex);
          root.appendChild(buttonsEl);
+         
+         // Apply AR adjustments if in AR mode
+         if (isARMode) {
+             setTimeout(adjustChartsForAR, 100);
+         }
     }
 }
 
@@ -375,10 +527,16 @@ function createChartButtons(originalIndex, state, visibleIndex) {
         valueButton.setAttribute('position', `0 ${buttonVerticalOffset} 0`);
         const valueText = document.createElement('a-text');
         valueText.setAttribute('value', state.valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2');
-        valueText.setAttribute('position', '0 0 0.06'); valueText.setAttribute('align', 'center'); valueText.setAttribute('color', 'white'); valueText.setAttribute('width', '4');
+        valueText.setAttribute('position', '0 0 0.06'); 
+        valueText.setAttribute('align', 'center'); 
+        valueText.setAttribute('color', 'white'); 
+        valueText.setAttribute('width', '4');
         valueButton.appendChild(valueText);
         valueButton.setAttribute('class', 'clickable');
-        valueButton.addEventListener('click', (event) => { event.stopPropagation(); setTimeout(() => toggleChartValue(originalIndex), 100); });
+        valueButton.addEventListener('click', (event) => { 
+            event.stopPropagation(); 
+            setTimeout(() => toggleChartValue(originalIndex), 100); 
+        });
         buttonsContainer.appendChild(valueButton);
         buttonVerticalOffset -= 1.2;
     }
@@ -389,10 +547,16 @@ function createChartButtons(originalIndex, state, visibleIndex) {
     timeButton.setAttribute('position', `0 ${buttonVerticalOffset} 0`);
     const timeText = document.createElement('a-text');
     timeText.setAttribute('value', TIME_TYPES[state.timeType].label);
-    timeText.setAttribute('position', '0 0 0.06'); timeText.setAttribute('align', 'center'); timeText.setAttribute('color', 'white'); timeText.setAttribute('width', '4');
+    timeText.setAttribute('position', '0 0 0.06'); 
+    timeText.setAttribute('align', 'center'); 
+    timeText.setAttribute('color', 'white'); 
+    timeText.setAttribute('width', '4');
     timeButton.appendChild(timeText);
     timeButton.setAttribute('class', 'clickable');
-    timeButton.addEventListener('click', (event) => { event.stopPropagation(); setTimeout(() => toggleChartTimeType(originalIndex), 100); });
+    timeButton.addEventListener('click', (event) => { 
+        event.stopPropagation(); 
+        setTimeout(() => toggleChartTimeType(originalIndex), 100); 
+    });
     buttonsContainer.appendChild(timeButton);
     return buttonsContainer;
 }
@@ -417,7 +581,10 @@ function createChart(chartConfigData, originalIndex, valueType, timeType = 'year
         if (pieData.length === 0 || pieData.every(item => item.size === 0)) pieData = [{ key: 'Sem Dados', size: 1 }];
         const titleEl = document.createElement('a-text');
         titleEl.setAttribute('value', `${chart.graphname} (${productName} - ${timeLabel})`);
-        titleEl.setAttribute('position', '1 6 0'); titleEl.setAttribute('align', 'center'); titleEl.setAttribute('color', '#FFFFFF'); titleEl.setAttribute('width', '8');
+        titleEl.setAttribute('position', '1 6 0'); 
+        titleEl.setAttribute('align', 'center'); 
+        titleEl.setAttribute('color', '#FFFFFF'); 
+        titleEl.setAttribute('width', '8');
         chartContainer.appendChild(titleEl);
         const pieEl = document.createElement('a-entity');
         const pieConfig = `legend: true; palette: ${palette}; animation: false; key: key; size: size; data: ${JSON.stringify(pieData)}; showInfo: true; showInfoColor: #FFFFFF`;
@@ -470,6 +637,11 @@ function renderAllCharts() {
             visibleChartIndex++;
         }
     });
+
+    // Apply AR adjustments if in AR mode
+    if (isARMode) {
+        setTimeout(adjustChartsForAR, 100);
+    }
 }
 
 async function fetchDataFromAPI(roomCode, retries = 3) {
