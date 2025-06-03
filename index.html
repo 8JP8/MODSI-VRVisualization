@@ -28,15 +28,30 @@
     <meta name="keywords" content="VR, data visualization, A-Frame, BabiaXR, 3D charts, immersive analytics, virtual reality">
     <meta name="author" content="MODSiVR Team">
 
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <!-- A-Frame Core -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    
+    <!-- A-Frame AR Component - Essential for AR functionality -->
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
+    
+    <!-- A-Frame Extras -->
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
+    
+    <!-- Environment Component -->
     <script src="https://unpkg.com/aframe-environment-component@1.3.3/dist/aframe-environment-component.min.js"></script>
+    
+    <!-- Text Geometry -->
     <script src="https://unpkg.com/aframe-text-geometry-component@0.5.1/dist/aframe-text-geometry-component.min.js"></script>
+    
+    <!-- Babia Components -->
     <script src="https://cdn.jsdelivr.net/gh/babiaxr/aframe-babia-components@master/dist/aframe-babia-components.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/babiaxr/aframe-babia-ui@master/dist/aframe-babia-ui.min.js"></script>
+    
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
+    <script src="scripts/main.js"></script>~
+    
     <!-- Loading Overlay -->
     <div class="loading-overlay hidden" id="loadingOverlay">
         <div class="loading-content">
@@ -57,31 +72,61 @@
         </div>
     </div>
 
-    <a-scene
-      xr-mode-ui="enabled: true; enterARButton: true"
-      vr-mode-ui="enabled: true"
-      embedded
-      renderer="colorManagement: true; physicallyCorrectLights: true"
-    >
-        <!-- Only show environment in VR/normal mode, not in AR -->
-        <a-entity id="vr-environment" environment="preset: default; groundColor: #445; groundTexture: walk;"></a-entity>
+    <!-- AR Mode Instructions -->
+    <div class="ar-instructions hidden" id="arInstructions">
+        <div class="ar-content">
+            <h3>Modo Realidade Aumentada</h3>
+            <p>Aponte a câmara para uma superfície plana para ver os gráficos no mundo real.</p>
+            <button class="ar-close-btn" id="closeArInstructions">Entendi</button>
+        </div>
+    </div>
+
+    <a-scene 
+        background="color: #ECECEC" 
+        vr-mode-ui="enabled: true" 
+        ar-mode-ui="enabled: true"
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        renderer="logarithmic-depth-buffer: true; precision: medium;"
+        embedded
+        id="scene">
+        
+        <!-- Sky (will be hidden in AR mode) -->
+        <a-sky color="#ECECEC" id="sky"></a-sky>
+        
+        <!-- Environment (will be hidden in AR mode) -->
+        <a-entity environment="preset: default; groundColor: #445; groundTexture: walk;" id="environment"></a-entity>
         
         <a-assets>
             <a-asset-item id="optimerBoldFont" src="https://rawgit.com/mrdoob/three.js/dev/examples/fonts/optimer_bold.typeface.json"></a-asset-item>
         </a-assets>
 
-        <!-- Skybox for VR/normal mode, hidden in AR by JS -->
-        <a-sky id="vr-sky" color="#ECECEC" visible="true"></a-sky>
+        <!-- AR Marker (invisible but helps with positioning) -->
+        <a-marker 
+            preset="hiro" 
+            id="arMarker"
+            visible="false">
+            <!-- Charts will be positioned relative to this marker in AR mode -->
+        </a-marker>
 
         <!-- Ponto de inserção de gráficos -->
         <a-entity id="charts-root"></a-entity>
 
-        <!-- Câmera -->
-        <a-entity movement-controls="fly: true" position="-3 5 20">
+        <!-- Câmera VR/Desktop -->
+        <a-entity 
+            id="vrCamera"
+            movement-controls="fly: true" 
+            position="-3 5 20">
             <a-entity camera position="0 0 0" look-controls></a-entity>
             <a-entity cursor="rayOrigin:mouse" raycaster></a-entity>
             <a-entity laser-controls="hand: right"></a-entity>
         </a-entity>
+
+        <!-- Câmera AR (will be activated in AR mode) -->
+        <a-camera 
+            id="arCamera"
+            position="0 0 0"
+            visible="false">
+        </a-camera>
     </a-scene>
 
     <!-- Room Selector UI -->
@@ -102,7 +147,5 @@
         </div>
         <div class="collapsed-indicator" id="collapsedRoomInfo">Room: N/A</div>
     </div>
-
-    <script src="scripts/main.js"></script>
 </body>
 </html>
