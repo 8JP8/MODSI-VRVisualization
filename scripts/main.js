@@ -1,3 +1,5 @@
+// scripts/main.js
+
 const root = document.getElementById('charts-root');
 
 // UI elements
@@ -12,21 +14,7 @@ const loadingOverlay = document.getElementById('loadingOverlay');
 const errorOverlay = document.getElementById('errorOverlay');
 const errorMessage = document.getElementById('errorMessage');
 const roomInfo = document.getElementById('roomInfo');
-
-// AR UI Elements (referenced by ARHandler and main.js)
-const arPlacementInstructions = document.getElementById('arPlacementInstructions');
-const arScaleSlider = document.getElementById('arScaleSlider');
-const arScaleSliderContainer = document.getElementById('arScaleSliderContainer');
-// const arInstructions = document.getElementById('arInstructions'); // Old, removed from HTML
-// const closeArInstructions = document.getElementById('closeArInstructions'); // Old, removed from HTML
-
-// AR Elements (A-Frame scene elements)
-const sceneEl = document.querySelector('a-scene');
-// const skyEl = document.getElementById('sky'); // ARHandler will manage visibility
-// const environmentEl = document.getElementById('environment'); // ARHandler will manage visibility
-// const vrCameraEl = document.getElementById('vrCamera'); // ARHandler will manage visibility
-// const arCameraEl = document.getElementById('arCamera'); // Not used with WebXR default camera
-// const arMarkerEl = document.getElementById('arMarker'); // Not used with WebXR hit-test
+const sceneEnvironment = document.getElementById('scene-environment'); // VR environment entity
 
 // API Configuration
 const API_BASE_URL = 'https://modsi-api-ffhhfgecfdehhscv.spaincentral-01.azurewebsites.net/api/Room/Get/';
@@ -34,68 +22,7 @@ const API_CODE = 'z4tKbNFdaaXzHZ4ayn9pRQokNWYgRkbVkCjOxTxP-8ChAzFuMigGCw==';
 
 let currentRoom = 'LD5RU';
 let isCollapsed = false;
-// let isARMode = false; // This will be managed by arHandler.isArActive
-// let arInstructionsShown = false; // Old logic, arPlacementInstructions handled by ARHandler
 
-let arHandler = null; // Instance of ARHandler
-
-// AR Mode Management is now primarily handled by ARHandler.js
-// The functions enterARMode, exitARMode, showARInstructions, hideARInstructions, adjustChartsForAR
-// are being replaced or made redundant by ARHandler's functionality.
-
-// This function is kept as it calls renderAllCharts, useful for resetting view.
-function adjustChartsForVR() {
-    // Restore original VR/Desktop positions and scales by re-rendering
-    renderAllCharts();
-}
-
-// Enhanced A-Frame event listeners for AR, now integrated with ARHandler
-if (sceneEl) {
-    sceneEl.addEventListener('enter-ar', () => {
-        console.log('A-Frame enter-ar event triggered');
-        if (arHandler) {
-            arHandler.onEnterAR();
-        }
-        hideRoomSelector();
-    });
-
-    sceneEl.addEventListener('exit-ar', () => {
-        console.log('A-Frame exit-ar event triggered');
-        if (arHandler) {
-            arHandler.onExitAR();
-        }
-        showRoomSelector();
-        adjustChartsForVR(); // Re-render charts for VR/desktop layout
-    });
-
-    // AR.js specific events are removed as we're focusing on WebXR hit-test
-    // sceneEl.addEventListener('arjs-video-loaded', ...);
-    // sceneEl.addEventListener('arjs-nft-loaded', ...);
-    // sceneEl.addEventListener('markerFound', ...);
-    // sceneEl.addEventListener('markerLost', ...);
-}
-
-// Enhanced fullscreen and mode detection
-function handleFullscreenChange() {
-    const isFullscreen = document.fullscreenElement ||
-                        document.webkitFullscreenElement ||
-                        document.mozFullScreenElement ||
-                        document.msFullscreenElement;
-
-    const isVRModeActive = sceneEl && sceneEl.is('vr-mode');
-    const isARActive = arHandler && arHandler.isArActive;
-
-    // This function no longer needs to call enterARMode/exitARMode,
-    // as ARHandler is tied to A-Frame's own enter-ar/exit-ar events.
-
-    if (isFullscreen || isVRModeActive || isARActive) {
-        hideRoomSelector();
-    } else { // Not fullscreen, not VR, not AR
-        showRoomSelector();
-    }
-}
-
-// Room Management Functions
 function updateRoomSelectorCollapsedState() {
     if (!roomSelector || !minimizeBtn || !collapsedRoomInfo) return;
     roomSelector.classList.toggle('collapsed', isCollapsed);
@@ -141,7 +68,6 @@ function getRoomFromURL() {
             console.log(`Parâmetro 'room' (${room}) encontrado no hash.`);
         }
     }
-
     return room || null;
 }
 
@@ -172,10 +98,7 @@ function hideRoomSelector() {
 }
 
 function showRoomSelector() {
-    // Show room selector only if not in AR mode (ARHandler controls its own UI)
-    if (roomSelector && !(arHandler && arHandler.isArActive)) {
-        roomSelector.classList.remove('hidden');
-    }
+    if (roomSelector) roomSelector.classList.remove('hidden');
 }
 
 function showLoading(show, roomNameForDisplay = null) {
@@ -202,18 +125,20 @@ function closeErrorAndEnterEnvironment() {
     showError(false);
     showLoading(false);
     clearCharts();
-    showRoomSelector();
+    // Check AR mode before showing room selector
+    const arModeActive = (typeof ARHandler !== 'undefined' && ARHandler.isARModeActive) ? ARHandler.isARModeActive() : false;
+    if (!arModeActive) {
+        showRoomSelector();
+    }
     syncRoomUI(currentRoom);
-    console.log("Error overlay closed. Entering environment with room selector. Context room: " + currentRoom);
+    console.log("Error overlay closed. Context room: " + currentRoom);
 }
 
 function retryConnection() {
     showError(false);
-    initializeApp(true); // Re-fetch data for the currentRoom
+    initializeApp(true);
 }
 
-
-// Event Listeners
 if (minimizeBtn) {
     minimizeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -243,11 +168,10 @@ if (connectBtn) {
 if (roomInput) {
     roomInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            connectBtn.click();
+            if(connectBtn) connectBtn.click();
         }
     });
 }
-
 
 async function connectToRoom(newRoomCode) {
     if (!newRoomCode) {
@@ -257,52 +181,71 @@ async function connectToRoom(newRoomCode) {
     currentRoom = newRoomCode;
     syncRoomUI(currentRoom);
 
-    isCollapsed = false; // Expand room selector when connecting to a new room
+    isCollapsed = false; // Expand selector when connecting to a new room
     updateRoomSelectorCollapsedState();
 
     const url = new URL(window.location);
     url.searchParams.set('room', currentRoom);
-    url.searchParams.delete('code'); // Remove 'code' if it was used as an alias for 'room'
+    url.searchParams.delete('code');
     window.history.pushState({}, '', url.toString());
 
     showRoomStatus(`Conectando à sala ${currentRoom}...`, 'loading');
-    if (connectBtn) connectBtn.disabled = true;
+    if(connectBtn) connectBtn.disabled = true;
 
-    await initializeApp(true); // Reload data for the new room
+    await initializeApp(true); // This will fetch data and render charts
 
-    // Check error overlay status after initializeApp finishes
-    if (errorOverlay && !errorOverlay.classList.contains('visible')) {
+    if (errorOverlay && !errorOverlay.classList.contains('visible')) { // Check if error overlay is NOT visible
         showRoomStatus(`Conectado à sala ${currentRoom} com sucesso!`, 'success');
-        isCollapsed = true; // Collapse after successful connection
-        updateRoomSelectorCollapsedState();
+        // isCollapsed = false; // Already set above
+        // updateRoomSelectorCollapsedState();
     } else {
-        showRoomStatus(`Falha ao carregar sala ${currentRoom}. Verifique o console para mais detalhes.`, 'error');
-        // Do not collapse on error, user might want to try again or change room
+        showRoomStatus(`Falha ao carregar sala ${currentRoom}.`, 'error');
     }
 
-    if (connectBtn) connectBtn.disabled = false;
+    if(connectBtn) connectBtn.disabled = false;
 }
 
-// Fullscreen and mode event listeners
+function handleFullscreenChange() {
+    const sceneEl = document.querySelector('a-scene');
+    const isFullscreen = document.fullscreenElement ||
+                        document.webkitFullscreenElement ||
+                        document.mozFullScreenElement ||
+                        document.msFullscreenElement;
+
+    const arModeActive = (typeof ARHandler !== 'undefined' && ARHandler.isARModeActive) ? ARHandler.isARModeActive() : false;
+
+    if (isFullscreen || (sceneEl && sceneEl.is('vr-mode')) || arModeActive) {
+        hideRoomSelector();
+    } else {
+        showRoomSelector();
+    }
+}
+
 document.addEventListener('fullscreenchange', handleFullscreenChange);
 document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
 document.addEventListener('mozfullscreenchange', handleFullscreenChange);
 document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 
+const sceneEl = document.querySelector('a-scene');
+
 if (sceneEl) {
-    sceneEl.addEventListener('enter-vr', hideRoomSelector);
+    sceneEl.addEventListener('enter-vr', () => {
+        hideRoomSelector();
+        if (sceneEnvironment) sceneEnvironment.setAttribute('visible', true); // Ensure VR env is visible
+    });
     sceneEl.addEventListener('exit-vr', () => {
-        showRoomSelector();
-        // Optionally, re-render charts if VR mode might affect layout differently
-        // adjustChartsForVR(); // This calls renderAllCharts
+        // ARHandler's onExitAR will handle showing room selector if not in AR.
+        // This primarily handles exit from VR to 2D.
+        const arModeActive = (typeof ARHandler !== 'undefined' && ARHandler.isARModeActive) ? ARHandler.isARModeActive() : false;
+        if (!arModeActive) {
+            showRoomSelector();
+        }
     });
-    sceneEl.addEventListener('loaded', () => {
-        console.log('A-Frame scene loaded');
-        // ARHandler is initialized on window.load, after scene might be loaded
-    });
+    // AR enter/exit listeners are now managed by ARHandler.js
+    // It will call hideRoomSelector/showRoomSelector as needed.
 }
 
-// Chart Configuration and Data Processing
+
 const POSITION_CONFIG = { startX: -18, baseY: 1.5, baseZ: 12, spacingX: 12, pieOffsetY: 3 };
 const TIME_TYPES = { 'years': { label: 'Anos', next: 'months' }, 'months': { label: 'Meses', next: 'days' }, 'days': { label: 'Dias', next: 'years' } };
 const JSON_TIME_MAPPING = { 'Year': 'years', 'Month': 'months', 'Day': 'days', 'year': 'years', 'month': 'months', 'day': 'days', 'years': 'years', 'months': 'months', 'days': 'days' };
@@ -324,7 +267,6 @@ function processKPIData(kpihistory, targetKPIId, timeAxisType, valueType = 'NewV
     });
     const finalData = [];
     Object.keys(dataByTimeKey).sort().forEach(timeKey => {
-        // Get the most recent entry for that timeKey
         const mostRecent = dataByTimeKey[timeKey].sort((a, b) => b.parsedDate - a.parsedDate)[0];
         const value = valueType === 'NewValue_2' ? mostRecent.NewValue_2 : mostRecent.NewValue_1;
         finalData.push({ key: timeKey, height: parseFloat(value) || 0 });
@@ -362,59 +304,52 @@ function toggleChartTimeType(chartIndex) {
 function renderSingleChart(chartIndex) {
     const chartConfig = chartsData[chartIndex];
     const state = chartStates[chartIndex];
-    if (!chartConfig || !state) return;
+    if (!chartConfig || !state || !root) return;
 
     const existingChart = root.querySelector(`[data-chart-index="${chartIndex}"]`);
     const existingButtons = root.querySelector(`[data-buttons-index="${chartIndex}"]`);
 
     if (existingChart) {
-        // BabiaXR specific cleanup for pie charts if component is present
         if (chartConfig.chart.chartType === "pizza" && existingChart.components && existingChart.components['babia-pie']) {
-            existingChart.removeAttribute('babia-pie'); // Trigger A-Frame's component removal
+            existingChart.removeAttribute('babia-pie'); // Important for babia-pie re-rendering
         }
-        // Delay removal to allow A-Frame to process component detachment if needed
+        // Delay removal and re-creation to ensure A-Frame processes attribute changes
         setTimeout(() => {
             if (existingChart.parentNode) existingChart.parentNode.removeChild(existingChart);
             if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
 
             // Recalculate visibleIndex based on current chartsData and their validity
             let visibleChartIndex = 0;
-            for(let i=0; i < chartIndex; i++){
-                if(chartsData[i] && (hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_1') || hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_2'))){
+            for(let i=0; i < chartIndex; i++){ // Iterate up to the current chart's original index
+                if(chartsData[i] && chartStates[i] && (hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_1') || hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_2'))){
                     visibleChartIndex++;
                 }
             }
 
             const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType, visibleChartIndex);
-            root.appendChild(chartEl);
+            if (chartEl) root.appendChild(chartEl);
             const buttonsEl = createChartButtons(chartIndex, state, visibleChartIndex);
-            root.appendChild(buttonsEl);
-            
-            // ARHandler will manage overall scale of `root` if in AR mode. No individual adjustments needed here.
-        }, 50); // 50ms delay, adjust if needed
-    } else {
-         // If only buttons exist (should not happen if chart doesn't), remove them
+            if (buttonsEl) root.appendChild(buttonsEl);
+        }, 50); 
+    } else { // If chart doesn't exist, create it (less common path if renderAllCharts is robust)
          if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
 
          let visibleChartIndex = 0;
          for(let i=0; i < chartIndex; i++){
-             if(chartsData[i] && (hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_1') || hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_2'))){
+             if(chartsData[i] && chartStates[i] && (hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_1') || hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_2'))){
                  visibleChartIndex++;
              }
          }
          const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType, visibleChartIndex);
-         root.appendChild(chartEl);
+         if (chartEl) root.appendChild(chartEl);
          const buttonsEl = createChartButtons(chartIndex, state, visibleChartIndex);
-         root.appendChild(buttonsEl);
-         
-         // ARHandler will manage overall scale of `root`.
+         if (buttonsEl) root.appendChild(buttonsEl);
     }
 }
 
-
 function createChartButtons(originalIndex, state, visibleIndex) {
     const chartConfig = chartsData[originalIndex];
-    if (!chartConfig || !state) return document.createElement('a-entity'); // Return empty entity if no config
+    if (!chartConfig || !chartConfig.chart) return null;
 
     const position = calculatePosition(visibleIndex, false); // Buttons are not pie charts for positioning
     const [x, y, z] = position.split(' ').map(parseFloat);
@@ -423,37 +358,40 @@ function createChartButtons(originalIndex, state, visibleIndex) {
     const hasValue2 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2');
 
     const buttonsContainer = document.createElement('a-entity');
-    buttonsContainer.setAttribute('position', `${x + 6} ${parseFloat(y) + 8} ${z}`); // Adjust position relative to chart
+    buttonsContainer.setAttribute('position', `${x + 6} ${parseFloat(y) + 8} ${z}`); // Adjust button panel position relative to chart
     buttonsContainer.setAttribute('data-buttons-index', originalIndex);
     let buttonVerticalOffset = 0;
 
     // Value toggle button (Produto 1 / Produto 2)
-    if (hasValue1 && hasValue2) { // Only show if both value types have data
+    if (hasValue1 && hasValue2) { // Only show if both products have data
         const valueButton = document.createElement('a-entity');
         valueButton.setAttribute('geometry', 'primitive: box; width: 2.5; height: 0.8; depth: 0.1');
         valueButton.setAttribute('material', `color: ${state.valueType === 'NewValue_1' ? '#4CAF50' : '#FF9800'}`);
         valueButton.setAttribute('position', `0 ${buttonVerticalOffset} 0`);
+        
         const valueText = document.createElement('a-text');
         valueText.setAttribute('value', state.valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2');
         valueText.setAttribute('position', '0 0 0.06'); // Slightly in front of the button
-        valueText.setAttribute('align', 'center'); 
-        valueText.setAttribute('color', 'white'); 
-        valueText.setAttribute('width', '4'); // Max width for text
+        valueText.setAttribute('align', 'center');
+        valueText.setAttribute('color', 'white');
+        valueText.setAttribute('width', '4'); // Text width for wrapping/scaling
         valueButton.appendChild(valueText);
-        valueButton.setAttribute('class', 'clickable'); // Make it clickable
+
+        valueButton.setAttribute('class', 'clickable'); // For cursor interaction
         valueButton.addEventListener('click', (event) => { 
             event.stopPropagation(); // Prevent scene-level clicks if any
-            setTimeout(() => toggleChartValue(originalIndex), 0); // Use timeout to ensure A-Frame processes event correctly
+            setTimeout(() => toggleChartValue(originalIndex), 100); // Timeout for A-Frame to process click
         });
         buttonsContainer.appendChild(valueButton);
-        buttonVerticalOffset -= 1.2; // Offset for next button
+        buttonVerticalOffset -= 1.2; // Space for next button
     }
 
     // Time type toggle button (Anos / Meses / Dias)
     const timeButton = document.createElement('a-entity');
     timeButton.setAttribute('geometry', 'primitive: box; width: 2.5; height: 0.8; depth: 0.1');
-    timeButton.setAttribute('material', 'color: #2196F3');
+    timeButton.setAttribute('material', 'color: #2196F3'); // Blue color
     timeButton.setAttribute('position', `0 ${buttonVerticalOffset} 0`);
+
     const timeText = document.createElement('a-text');
     timeText.setAttribute('value', TIME_TYPES[state.timeType] ? TIME_TYPES[state.timeType].label : 'Tempo');
     timeText.setAttribute('position', '0 0 0.06');
@@ -461,66 +399,66 @@ function createChartButtons(originalIndex, state, visibleIndex) {
     timeText.setAttribute('color', 'white');
     timeText.setAttribute('width', '4');
     timeButton.appendChild(timeText);
+
     timeButton.setAttribute('class', 'clickable');
-    timeButton.addEventListener('click', (event) => {
+    timeButton.addEventListener('click', (event) => { 
         event.stopPropagation();
-        setTimeout(() => toggleChartTimeType(originalIndex), 0);
+        setTimeout(() => toggleChartTimeType(originalIndex), 100);
     });
     buttonsContainer.appendChild(timeButton);
     return buttonsContainer;
 }
 
-
 function createChart(chartConfigData, originalIndex, valueType, timeType = 'years', visibleIndex) {
     const { kpihistory, chart } = chartConfigData;
+    if (!kpihistory || !chart) return null;
+
     const kpiId = parseInt(chart.zAxis);
     const chartContainer = document.createElement('a-entity');
     const isPieChart = chart.chartType === "pizza";
 
     chartContainer.setAttribute('position', calculatePosition(visibleIndex, isPieChart));
-    chartContainer.setAttribute('data-chart-index', originalIndex); // Original index for state tracking
+    chartContainer.setAttribute('data-chart-index', originalIndex); // For re-finding this chart
 
     const palette = valueType === 'NewValue_1' ? 'commerce' : 'ubuntu'; // Example palettes
     const productName = valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2';
-    const timeLabel = TIME_TYPES[timeType] ? TIME_TYPES[timeType].label : 'N/A';
+    const timeLabel = TIME_TYPES[timeType] ? TIME_TYPES[timeType].label : 'Tempo';
+    const chartTitle = `${chart.graphname || 'Gráfico'} (${productName} - ${timeLabel})`;
 
     if (chart.chartType === "barras") {
         const chartData = processKPIData(kpihistory, kpiId, timeType, valueType);
-        const babiaConfig = `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: false; title: ${chart.graphname} (${productName} - ${timeLabel}); titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 2 12 0; heightMax: 800; x_axis: key; height: height; data: ${JSON.stringify(chartData)}; showInfo: true; showInfoColor: #FFFFFF`;
+        // BabiaXR bars component configuration
+        const babiaConfig = `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: false; title: ${chartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 2 12 0; heightMax: 800; x_axis: key; height: height; data: ${JSON.stringify(chartData)}; showInfo: true; showInfoColor: #FFFFFF`;
         chartContainer.setAttribute('babia-bars', babiaConfig);
     } else if (chart.chartType === "pizza") {
         let pieData = processPieData(kpihistory, kpiId, timeType, valueType);
-        // Ensure pieData is not empty for babia-pie component
+        // If no data or all data is zero, provide a default slice to render something
         if (pieData.length === 0 || pieData.every(item => item.size === 0)) {
-            pieData = [{ key: 'Sem Dados', size: 1 }]; // Placeholder if no data
+            pieData = [{ key: 'Sem Dados', size: 1 }];
         }
-        // Add title as a separate a-text for pie charts for better control
+        
+        // For pie charts, BabiaXR might not have a title attribute directly in babia-pie.
+        // Create a separate title entity if needed.
         const titleEl = document.createElement('a-text');
-        titleEl.setAttribute('value', `${chart.graphname} (${productName} - ${timeLabel})`);
-        titleEl.setAttribute('position', '1 6 0'); // Adjust position as needed above the pie
-        titleEl.setAttribute('align', 'center'); 
-        titleEl.setAttribute('color', '#FFFFFF'); 
-        titleEl.setAttribute('width', '8'); // Max width for title
+        titleEl.setAttribute('value', chartTitle);
+        titleEl.setAttribute('position', '1 6 0'); // Position title above the pie
+        titleEl.setAttribute('align', 'center');
+        titleEl.setAttribute('color', '#FFFFFF'); // White title
+        titleEl.setAttribute('width', '8'); // Text width for wrapping
         chartContainer.appendChild(titleEl);
 
-        const pieEl = document.createElement('a-entity'); // Separate entity for the pie itself
+        const pieEl = document.createElement('a-entity'); // Pie chart itself
         const pieConfig = `legend: true; palette: ${palette}; animation: false; key: key; size: size; data: ${JSON.stringify(pieData)}; showInfo: true; showInfoColor: #FFFFFF`;
         pieEl.setAttribute('babia-pie', pieConfig);
-        pieEl.setAttribute('rotation', '90 0 0'); // Rotate pie to be flat
-        pieEl.setAttribute('scale', '1.8 1.8 1.8'); // Scale pie if needed
+        pieEl.setAttribute('rotation', '90 0 0'); // Rotate pie to be flat on XZ plane
+        pieEl.setAttribute('scale', '1.8 1.8 1.8'); // Adjust scale if needed
         chartContainer.appendChild(pieEl);
     }
-    // Make chart container invisible if no valid data to display for current settings
-    const hasData = (chart.chartType === "barras" && processKPIData(kpihistory, kpiId, timeType, valueType).length > 0) ||
-                    (chart.chartType === "pizza" && processPieData(kpihistory, kpiId, timeType, valueType).some(d => d.size > 0));
-    
-    chartContainer.setAttribute('visible', hasData.toString());
-
     return chartContainer;
 }
 
-
 function clearCharts() {
+    if (!root) return;
     while (root.firstChild) {
         root.removeChild(root.firstChild);
     }
@@ -529,24 +467,23 @@ function clearCharts() {
 }
 
 function getDefaultTimeType(chart) {
-    // Prioritize more specific time unit keys if available
+    // Determine default time type from chart configuration if available
     const timeUnit = chart.xAxis || chart.timeUnit || chart.xAxisUnit || chart.temporalUnit;
-    return JSON_TIME_MAPPING[timeUnit] || 'years'; // Default to 'years'
+    return JSON_TIME_MAPPING[timeUnit] || 'years'; // Default to 'years' if not specified
 }
 
 function initializeChartStates() {
     chartStates = {}; // Reset states
     chartsData.forEach((chartConfig, index) => {
+        if (!chartConfig.chart) return;
         const kpiId = parseInt(chartConfig.chart.zAxis);
+        // Determine default valueType (NewValue_1 or NewValue_2)
         const hasValue1 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1');
         const hasValue2 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2');
-        
         let defaultValueType = 'NewValue_1';
-        if (!hasValue1 && hasValue2) { // If Value1 has no data but Value2 does, default to Value2
+        if (!hasValue1 && hasValue2) { // If only NewValue_2 has data, use it
             defaultValueType = 'NewValue_2';
         }
-        // If neither has data, it will default to NewValue_1, and chart might be hidden by createChart logic
-
         chartStates[index] = {
             valueType: defaultValueType,
             timeType: getDefaultTimeType(chartConfig.chart)
@@ -555,36 +492,33 @@ function initializeChartStates() {
 }
 
 function renderAllCharts() {
-    // Clear previous charts from the root
+    if (!root) return;
+    // Clear existing charts before rendering all
     while (root.firstChild) {
         root.removeChild(root.firstChild);
     }
 
-    let visibleChartIndex = 0; // Index for positioning visible charts
+    let visibleChartIndex = 0; // To calculate position for only valid charts
     chartsData.forEach((chartConfig, originalIndex) => {
-        const { kpihistory, chart } = chartConfig;
-        const kpiId = parseInt(chart.zAxis);
-
-        // Check if there's any valid data for this KPI for either value type
-        if (hasValidData(kpihistory, kpiId, 'NewValue_1') || hasValidData(kpihistory, kpiId, 'NewValue_2')) {
+        if (!chartConfig.chart || !chartConfig.kpihistory) return;
+        const kpiId = parseInt(chartConfig.chart.zAxis);
+        
+        // Check if this chart has any valid data for either product type
+        if (hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1') || hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2')) {
             const state = chartStates[originalIndex];
-            if (!state) { // Should be initialized by initializeChartStates
+            if (!state) { // Should not happen if initializeChartStates was called
                 console.warn(`State not found for chart index ${originalIndex}. Skipping.`);
                 return;
             }
-            
             const el = createChart(chartConfig, originalIndex, state.valueType, state.timeType, visibleChartIndex);
-            root.appendChild(el);
+            if (el) root.appendChild(el);
             
             const buttonsEl = createChartButtons(originalIndex, state, visibleChartIndex);
-            root.appendChild(buttonsEl);
+            if (buttonsEl) root.appendChild(buttonsEl);
             
-            visibleChartIndex++;
-        } else {
-            // console.log(`No valid data for chart ${chart.graphname} (KPI ${kpiId}). Skipping render.`);
+            visibleChartIndex++; // Increment only for charts that are actually rendered
         }
     });
-    // ARHandler manages the scale/position of `root` in AR. No per-chart AR adjustments here.
 }
 
 async function fetchDataFromAPI(roomCode, retries = 3) {
@@ -593,10 +527,7 @@ async function fetchDataFromAPI(roomCode, retries = 3) {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             const response = await fetch(apiUrl, {
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
             });
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
@@ -605,7 +536,7 @@ async function fetchDataFromAPI(roomCode, retries = 3) {
             if (!data) {
                 throw new Error('Nenhum dado recebido da API');
             }
-            // Validate data structure
+            // Validate data structure (basic check)
             if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].config === 'object' &&
                 Array.isArray(data[0].config.kpihistory) && Array.isArray(data[0].config.charts)) {
                 return data;
@@ -613,7 +544,9 @@ async function fetchDataFromAPI(roomCode, retries = 3) {
             throw new Error('Estrutura de dados da API inválida.');
         } catch (error) {
             console.error(`Tentativa ${attempt} falhou: ${error.message}`);
-            if (attempt === retries) throw error; // Rethrow last error
+            if (attempt === retries) {
+                throw error; // Re-throw last error
+            }
             await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
         }
     }
@@ -622,30 +555,28 @@ async function fetchDataFromAPI(roomCode, retries = 3) {
 async function initializeApp(attemptLoadFromUrl = true) {
     const roomFromUrl = getRoomFromURL();
     let roomToLoad = null;
-    let localIsCollapsed = false; // For managing room selector state during init
+    let localIsCollapsed = false; // For room selector state
+
+    // Reset AR state if ARHandler is available
+    if (typeof ARHandler !== 'undefined' && ARHandler.resetARStateForAppReinit) {
+        ARHandler.resetARStateForAppReinit();
+    }
 
     if (attemptLoadFromUrl && roomFromUrl) {
         roomToLoad = roomFromUrl;
-    } else if (currentRoom && !roomFromUrl) { // If there's a currentRoom but no URL param, use currentRoom
-        // This case might be if connectToRoom was called, or a default is set.
-        // Only set roomToLoad if we intend to auto-load it.
-        // For initial load, if no URL param, we don't auto-load LD5RU unless specified.
-        // Let's adjust: if attemptLoadFromUrl is true, AND roomFromUrl is null, don't try to load currentRoom by default here.
-        // The user should explicitly connect or it should come from URL.
     }
 
-
     if (roomToLoad) {
-        currentRoom = roomToLoad; // Update global currentRoom
+        currentRoom = roomToLoad;
         syncRoomUI(currentRoom);
         showLoading(true, currentRoom);
-        showError(false);
+        showError(false); // Clear previous errors
 
         try {
             console.log(`Initializing application for room: ${currentRoom}...`);
             const apiDataArray = await fetchDataFromAPI(currentRoom);
 
-            // Assuming data structure is [ { "config": { "kpihistory": [], "charts": [] } } ]
+            // Assuming data structure [ { "config": { "kpihistory": [], "charts": [] } } ]
             const config = apiDataArray[0].config;
             const kpihistoryFromConfig = config.kpihistory;
             const chartsFromConfig = config.charts;
@@ -653,93 +584,77 @@ async function initializeApp(attemptLoadFromUrl = true) {
             if (!kpihistoryFromConfig || !chartsFromConfig) {
                 throw new Error('Missing kpihistory or charts in API response config.');
             }
-            
-            // Process and store chart data
-            chartsData = []; // Clear previous data
+
+            // Prepare chartsData by combining kpihistory with each chart config
+            chartsData = []; // Clear previous charts data
             chartsFromConfig.forEach(chart => {
                 chartsData.push({
-                    kpihistory: kpihistoryFromConfig, // Share kpihistory among charts from same room
+                    kpihistory: kpihistoryFromConfig, // Share kpihistory among charts
                     chart: chart
                 });
             });
 
             if (chartsData.length === 0) {
                 console.warn('Nenhum gráfico encontrado nos dados para esta sala.');
-                clearCharts(); // Ensure scene is empty
+                clearCharts(); // Ensure display is clean
             } else {
-                initializeChartStates(); // Initialize states before rendering
-                renderAllCharts();       // Render all charts based on new data
+                initializeChartStates(); // Setup initial states for valueType and timeType
+                renderAllCharts();       // Render all valid charts
             }
-            
+
             localIsCollapsed = true; // Collapse room selector after successful load
 
-            setTimeout(() => showLoading(false), 500); // Give a bit of time for rendering
+            setTimeout(() => showLoading(false), 500); // Give a moment for rendering
             console.log(`Application initialized successfully for room: ${currentRoom}`);
 
         } catch (error) {
             console.error(`Falha ao inicializar para a sala ${currentRoom}:`, error);
             localIsCollapsed = false; // Keep room selector open on error
             showLoading(false);
-            // Construct a more user-friendly error message
-            let displayError = `Falha ao carregar dados da sala ${currentRoom}.`;
-            if (error.message.includes("HTTP error")) {
-                displayError += " Problema de comunicação com o servidor.";
-            } else if (error.message.includes("Estrutura de dados")) {
-                displayError += " Formato de dados inesperado.";
-            } else {
-                displayError += " Por favor, tente novamente.";
-            }
-            showError(true, displayError);
-            clearCharts(); // Clear any partially rendered charts
+            showError(true, `Falha ao carregar dados da sala ${currentRoom}: ${error.message}`);
         }
     } else {
-        // No room in URL, or explicit connection hasn't happened yet.
-        // Show room selector, don't show loading/error unless triggered by connectToRoom
+        // No room to load from URL, setup for manual room entry
         localIsCollapsed = false; // Keep room selector open
-        syncRoomUI(currentRoom); // Reflect currentRoom (e.g. default LD5RU or last connected)
+        syncRoomUI(currentRoom); // Sync with default or last known room
         showLoading(false);
         showError(false);
-        clearCharts(); // Ensure no old charts are shown
+        clearCharts(); // Clear any existing charts
         console.log("Nenhuma sala especificada na URL para carregamento automático. Seletor de sala ativo. Sala de contexto: " + currentRoom);
     }
 
     isCollapsed = localIsCollapsed;
     updateRoomSelectorCollapsedState();
-    showRoomSelector(); // Ensure room selector visibility is correctly set
+
+    // Show room selector only if not in VR or AR mode.
+    const arModeActive = (typeof ARHandler !== 'undefined' && ARHandler.isARModeActive) ? ARHandler.isARModeActive() : false;
+    if (sceneEl && !sceneEl.is('vr-mode') && !arModeActive) {
+        showRoomSelector();
+    }
 }
 
-
-// Initialize ARHandler on window load
 window.addEventListener('load', () => {
     console.log('Page loaded, starting application...');
-
-    // Initialize ARHandler
-    if (sceneEl && root && arPlacementInstructions && arScaleSlider && arScaleSliderContainer) {
-        arHandler = new ARHandler(
-            sceneEl,
-            root, // This is the <a-entity id="charts-root">
-            arPlacementInstructions,
-            arScaleSlider,
-            arScaleSliderContainer
-        );
-        console.log('ARHandler initialized.');
-    } else {
-        console.error('Failed to initialize ARHandler: One or more required elements are missing.');
-        if (!sceneEl) console.error("Missing: sceneEl");
-        if (!root) console.error("Missing: charts-root (root var)");
-        if (!arPlacementInstructions) console.error("Missing: arPlacementInstructions");
-        if (!arScaleSlider) console.error("Missing: arScaleSlider");
-        if (!arScaleSliderContainer) console.error("Missing: arScaleSliderContainer");
-    }
-    
     const closeBtn = document.getElementById('closeErrorAndEnterBtn');
     if (closeBtn) {
         closeBtn.addEventListener('click', closeErrorAndEnterEnvironment);
     }
-    const retryBtn = document.getElementById('retryConnectionBtn');
-    if (retryBtn) {
-        retryBtn.addEventListener('click', retryConnection);
+    
+    // Initialize AR Handler, passing necessary functions from main.js
+    if (typeof ARHandler !== 'undefined' && ARHandler.init) {
+        ARHandler.init(hideRoomSelector, showRoomSelector);
+    } else {
+        console.error("ARHandler is not defined. AR features might not work.");
     }
 
-    initializeApp(true); // Attempt to load room from URL or use default
+    initializeApp(true); // Initial application load sequence
 });
+
+if (sceneEl) {
+    sceneEl.addEventListener('loaded', () => {
+        console.log('A-Frame scene loaded');
+        // Any specific logic after A-Frame scene itself is fully parsed and ready.
+        // ARHandler's init also has a DOMContentLoaded and element check,
+        // so this is more for A-Frame specific post-load tasks if any.
+    });
+}
