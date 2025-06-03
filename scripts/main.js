@@ -225,18 +225,35 @@ if (sceneEl) {
 function setSceneBackgroundVisibility(visible) {
     const sky = document.getElementById('vr-sky');
     const env = document.getElementById('vr-environment');
-    if (sky) sky.setAttribute('visible', visible);
-    if (env) env.setAttribute('visible', visible);
+    if (sky) {
+        sky.setAttribute('visible', visible);
+        // In AR, also set sky color to transparent to avoid white background
+        if (!visible) {
+            sky.setAttribute('color', 'transparent');
+            sky.setAttribute('material', 'color: transparent; opacity: 0;');
+        } else {
+            sky.setAttribute('color', '#ECECEC');
+            sky.setAttribute('material', 'color: #ECECEC; opacity: 1;');
+        }
+    }
+    if (env) {
+        env.setAttribute('visible', visible);
+    }
 }
 
 // Listen for AR mode events to toggle skybox/environment and adjust scene for AR
 if (sceneEl) {
+    setSceneBackgroundVisibility(true);
+
     sceneEl.addEventListener('enter-ar', () => {
-        setSceneBackgroundVisibility(false); // Hide sky/environment, show camera feed
+        // Delay to ensure AR camera feed is ready before hiding backgrounds
+        setTimeout(() => {
+            setSceneBackgroundVisibility(false);
+        }, 100);
         hideRoomSelector();
     });
     sceneEl.addEventListener('exit-ar', () => {
-        setSceneBackgroundVisibility(true); // Restore sky/environment
+        setSceneBackgroundVisibility(true);
         showRoomSelector();
     });
 }
