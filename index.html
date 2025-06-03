@@ -57,7 +57,13 @@
         </div>
     </div>
 
-    <a-scene background="color: #ECECEC" vr-mode-ui="enabled: true" ar-mode-ui="enabled: true">
+    <a-scene
+      xr-mode-ui="enabled: true; enterARButton: true"
+      vr-mode-ui="enabled: true"
+      embedded
+      renderer="colorManagement: true; physicallyCorrectLights: true"
+      background="color: #ECECEC"
+    >
         <a-entity environment="preset: default; groundColor: #445; groundTexture: walk;"></a-entity>
         
         <a-assets>
