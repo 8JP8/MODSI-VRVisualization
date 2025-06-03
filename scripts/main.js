@@ -221,23 +221,22 @@ if (sceneEl) {
 
 // --- AR MODE SUPPORT ---
 
-// Helper to hide/show skybox in AR mode only
-function setSkyboxVisibility(visible) {
-    const sky = document.querySelector('a-sky');
-    if (sky) {
-        sky.setAttribute('visible', visible);
-    }
+// Helper to hide/show skybox and environment in AR mode only
+function setSceneBackgroundVisibility(visible) {
+    const sky = document.getElementById('vr-sky');
+    const env = document.getElementById('vr-environment');
+    if (sky) sky.setAttribute('visible', visible);
+    if (env) env.setAttribute('visible', visible);
 }
 
-// Listen for AR mode events to toggle skybox and adjust scene for AR
+// Listen for AR mode events to toggle skybox/environment and adjust scene for AR
 if (sceneEl) {
     sceneEl.addEventListener('enter-ar', () => {
-        setSkyboxVisibility(false); // Hide skybox, show camera feed
+        setSceneBackgroundVisibility(false); // Hide sky/environment, show camera feed
         hideRoomSelector();
-        // Optionally: adjust chart/entity positions for AR here if needed
     });
     sceneEl.addEventListener('exit-ar', () => {
-        setSkyboxVisibility(true); // Restore skybox
+        setSceneBackgroundVisibility(true); // Restore sky/environment
         showRoomSelector();
     });
 }

@@ -62,13 +62,16 @@
       vr-mode-ui="enabled: true"
       embedded
       renderer="colorManagement: true; physicallyCorrectLights: true"
-      background="color: #ECECEC"
     >
-        <a-entity environment="preset: default; groundColor: #445; groundTexture: walk;"></a-entity>
+        <!-- Only show environment in VR/normal mode, not in AR -->
+        <a-entity id="vr-environment" environment="preset: default; groundColor: #445; groundTexture: walk;"></a-entity>
         
         <a-assets>
             <a-asset-item id="optimerBoldFont" src="https://rawgit.com/mrdoob/three.js/dev/examples/fonts/optimer_bold.typeface.json"></a-asset-item>
         </a-assets>
+
+        <!-- Skybox for VR/normal mode, hidden in AR by JS -->
+        <a-sky id="vr-sky" color="#ECECEC" visible="true"></a-sky>
 
         <!-- Ponto de inserção de gráficos -->
         <a-entity id="charts-root"></a-entity>
