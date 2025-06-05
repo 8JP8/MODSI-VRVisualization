@@ -241,21 +241,21 @@ if (sceneEl) {
 
 
 // Chart and 3D Scene Configuration
-const POSITION_CONFIG = { startX: -5, baseY: 1.5, baseZ: 0, spacingX: 15, pieOffsetY: 3, bubbleOffsetY: 1 };
+const POSITION_CONFIG = { startX: -10, baseY: 1.5, baseZ: 0, spacingX: 10, pieOffsetY: 3, bubbleOffsetY: 1 };
 const TIME_TYPES = {
     'years': { label: 'Anos', next: 'months' },
     'months': { label: 'Meses', next: 'days' },
     'days': { label: 'Dias', next: 'byChange' },
-    'byChange': { label: 'By change', next: 'years' }
+    'byChange': { label: 'Alteração', next: 'years' }
 };
 const JSON_TIME_MAPPING = {
     'Year': 'years', 'Month': 'months', 'Day': 'days',
     'year': 'years', 'month': 'months', 'day': 'days',
     'years': 'years', 'months': 'months', 'days': 'days',
-    'byChange': 'byChange'
+    'byChange': 'change'
 };
 const CONSTANT_BUBBLE_RADIUS = 1;
-const BUBBLE_HEIGHT_VISUAL_SCALE_FACTOR = 20;
+const BUBBLE_CHART_VISUAL_HEIGHT_MAX = 8; // The fixed visual height for the chart's Y-axis.
 const BUBBLE_CHART_CONTAINER_SCALE = "0.9 0.9 0.9";
 
 let chartsData = [];
@@ -315,23 +315,27 @@ function processPieData(kpihistory, targetKPIId, timeAxisType, valueType = 'NewV
 
 function processBubbleData(kpihistory, targetKPIId, timeAxisType, constantRadius = CONSTANT_BUBBLE_RADIUS) {
     const bubbleChartData = [];
+    // Process data for product 1, using original height values
     const dataProduct1 = processKPIData(kpihistory, targetKPIId, timeAxisType, 'NewValue_1');
     dataProduct1.forEach(item => {
-        if (item.height > 0) {
+        if (item.height > 0) { // Only include bubbles with positive height
             bubbleChartData.push({
-                key: item.key, key2: "produto 1",
-                height: item.height / BUBBLE_HEIGHT_VISUAL_SCALE_FACTOR,
-                originalHeight: item.height, radius: constantRadius
+                key: item.key,
+                key2: "produto 1",
+                height: item.height, // Use original data value
+                radius: constantRadius
             });
         }
     });
+    // Process data for product 2, using original height values
     const dataProduct2 = processKPIData(kpihistory, targetKPIId, timeAxisType, 'NewValue_2');
     dataProduct2.forEach(item => {
-         if (item.height > 0) {
+         if (item.height > 0) { // Only include bubbles with positive height
             bubbleChartData.push({
-                key: item.key, key2: "produto 2",
-                height: item.height / BUBBLE_HEIGHT_VISUAL_SCALE_FACTOR,
-                originalHeight: item.height, radius: constantRadius
+                key: item.key,
+                key2: "produto 2",
+                height: item.height, // Use original data value
+                radius: constantRadius
             });
         }
     });
@@ -435,7 +439,10 @@ function createChartButtons(originalIndex, state, visibleIndex) {
 
     const chartType = chartConfig.chart.chartType;
     const posString = calculatePosition(visibleIndex, chartType);
-    const [x, y, z] = posString.split(' ').map(parseFloat);
+    let [x, y, z] = posString.split(' ').map(parseFloat);
+    //button container offsets
+    if (chartType == "babia-pie") { y -= 3; }
+    if (chartType == "babia-bubbles") { y -= 2; }
 
     const kpiId = parseInt(chartConfig.chart.zAxis);
     const hasValue1 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1');
@@ -512,17 +519,23 @@ function createChart(chartConfigData, originalIndex, valueType, timeType = 'year
     } else if (chart.chartType === "babia-bubbles") {
         chartContainer.setAttribute('scale', BUBBLE_CHART_CONTAINER_SCALE);
         let bubbleData = processBubbleData(kpihistory, kpiId, timeType, CONSTANT_BUBBLE_RADIUS);
-        let maxScaledHeight = 0;
-        if (bubbleData.length > 0) {
-            maxScaledHeight = Math.max(...bubbleData.map(d => d.height));
-        } else {
-            bubbleData.push({ key: 'Sem Dados', key2: 'N/A', height: 1 / BUBBLE_HEIGHT_VISUAL_SCALE_FACTOR, originalHeight: 1, radius: CONSTANT_BUBBLE_RADIUS });
-            maxScaledHeight = 1 / BUBBLE_HEIGHT_VISUAL_SCALE_FACTOR;
+
+        // Handle case where there is valid data but none of it is positive.
+        // This adds a single, zero-height data point to ensure the component
+        // still renders the chart plane and axes, but without any visible bubbles.
+        if (bubbleData.length === 0) {
+            bubbleData.push({ key: 'Sem dados positivos', key2: '', height: 0, radius: 0 });
         }
-        const visualHeightMaxForBabia = maxScaledHeight > 0 ? Math.ceil(maxScaledHeight * 1.1) : 5;
-        const bubbleTitleY = (visualHeightMaxForBabia + 2) / parseFloat(BUBBLE_CHART_CONTAINER_SCALE.split(" ")[1]);
+
+        // Calculate title position based on the fixed visual height.
+        // The title is positioned relative to the container's scale.
+        const titleYPosition = (BUBBLE_CHART_VISUAL_HEIGHT_MAX + 2) / parseFloat(BUBBLE_CHART_CONTAINER_SCALE.split(" ")[1]);
+        
         const bubbleChartTitle = `${chart.graphname || 'Gráfico'} (${timeLabel})`;
-        const babiaConfig = `x_axis: key; z_axis: key2; height: height; radius: radius; legend: true; palette: foxy; animation: true; tooltip: true; title: ${bubbleChartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 0 ${bubbleTitleY} 0; heightMax: ${visualHeightMaxForBabia}; radiusMax: ${CONSTANT_BUBBLE_RADIUS}; data: ${JSON.stringify(bubbleData)}; showInfo: true; showInfoColor: #FFFFFF`;
+        
+        // babia-bubbles will auto-scale the data. The bubble with the max data value
+        // will have its height rendered at BUBBLE_CHART_VISUAL_HEIGHT_MAX.
+        const babiaConfig = `x_axis: key; z_axis: key2; height: height; radius: radius; legend: true; palette: foxy; animation: true; tooltip: true; title: ${bubbleChartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 0 ${titleYPosition} 0; heightMax: ${BUBBLE_CHART_VISUAL_HEIGHT_MAX}; radiusMax: ${CONSTANT_BUBBLE_RADIUS}; data: ${JSON.stringify(bubbleData)}; showInfo: true; showInfoColor: #FFFFFF`;
         chartContainer.setAttribute('babia-bubbles', babiaConfig);
     } else if (chart.chartType === "babia-pie") {
         let pieData = processPieData(kpihistory, kpiId, timeType, valueType);
