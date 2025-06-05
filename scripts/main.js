@@ -330,7 +330,7 @@ function toggleChartValue(chartIndex) {
     if (!chartStates[chartIndex]) return;
     const chartConfig = chartsData[chartIndex];
     // Don't toggle for bubble charts as they show both products
-    if (chartConfig && chartConfig.chart.chartType === "bubbles") {
+    if (chartConfig && (chartConfig.chart.chartType === "babia-bubbles" || chartConfig.chart.chartType === "bubbles")) {
         return;
     }
     chartStates[chartIndex].valueType = chartStates[chartIndex].valueType === 'NewValue_1' ? 'NewValue_2' : 'NewValue_1';
