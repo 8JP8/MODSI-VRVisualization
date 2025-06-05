@@ -1,0 +1,625 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #10141F 0%, #1A1D29 100%);
+    color: #E0E6F1;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0D1117 0%, #1A1D29 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    color: #E0E6F1;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+.loading-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.loading-content {
+    text-align: center;
+    max-width: 400px;
+    padding: 2rem;
+}
+
+.loading-title {
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #FFFFFF;
+}
+
+.loading-text {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+    color: #B0B8C5;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(44, 182, 246, 0.25);
+    border-radius: 50%;
+    border-top-color: #2CB6F6;
+    animation: spin 1s ease-in-out infinite;
+    margin: 0 auto 1.5rem;
+}
+
+.room-selector {
+    position: fixed;
+    bottom: 25px;
+    left: 25px;
+    background: rgba(31, 35, 51, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(70, 80, 110, 0.4);
+    border-radius: 12px;
+    padding: 20px;
+    color: #E0E6F1;
+    z-index: 1000;
+    min-width: 300px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(70, 80, 110, 0.2) inset;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.room-selector:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(70, 80, 110, 0.3) inset;
+}
+
+.room-selector.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+}
+
+.room-selector h3 {
+    margin: 0 0 18px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.room-icon {
+    width: 20px;
+    height: 20px;
+    fill: #2CB6F6;
+    opacity: 1;
+}
+
+.room-input-group {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.room-input {
+    flex: 1;
+    padding: 12px 16px;
+    background: rgba(26, 29, 41, 0.8);
+    border: 1px solid rgba(70, 80, 110, 0.6);
+    border-radius: 8px;
+    color: #E0E6F1;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.room-input:focus {
+    border-color: #2CB6F6;
+    background: rgba(31, 35, 51, 0.7);
+    box-shadow: 0 0 0 3px rgba(44, 182, 246, 0.2);
+}
+
+.room-input::placeholder {
+    color: rgba(224, 230, 241, 0.4);
+}
+
+.room-btn {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #7F5AF0 0%, #2CB6F6 100%); 
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0, 0.2);
+}
+
+.room-btn:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transition: left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.room-btn:hover:before {
+    left: 100%;
+}
+
+.room-btn:hover {
+    background: linear-gradient(135deg, #8A6FF5 0%, #40C2F7 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 7px 15px rgba(127, 90, 240, 0.3);
+}
+
+.room-btn:active {
+    transform: translateY(0px);
+    box-shadow: 0 4px 10px rgba(0,0,0, 0.2);
+}
+
+.room-status {
+    font-size: 13px;
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.room-status.success {
+    background: rgba(114, 221, 170, 0.2);
+    color: #72DDAA;
+    border: 1px solid rgba(114, 221, 170, 0.4);
+}
+
+.room-status.error {
+    background: rgba(247, 114, 114, 0.2);
+    color: #F77272;
+    border: 1px solid rgba(247, 114, 114, 0.4);
+}
+
+.room-status.loading {
+    background: rgba(44, 182, 246, 0.2);
+    color: #2CB6F6;
+    border: 1px solid rgba(44, 182, 246, 0.4);
+}
+
+.minimize-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(70, 80, 110, 0.3);
+    border: 1px solid rgba(70, 80, 110, 0.5);
+    border-radius: 6px;
+    color: #9099AB;
+    cursor: pointer;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 1;
+    transition: all 0.3s ease;
+}
+
+.minimize-btn:hover {
+    background: rgba(70, 80, 110, 0.5);
+    color: #E0E6F1;
+    transform: scale(1.05);
+}
+
+.room-selector.collapsed {
+    padding: 12px 16px;
+    min-width: auto;
+    cursor: pointer;
+    border-radius: 10px;
+}
+
+.room-selector.collapsed .room-content {
+    display: none;
+}
+
+.room-selector.collapsed .minimize-btn {
+    display: none;
+}
+
+.collapsed-indicator {
+    display: none; 
+    font-size: 13px;
+    color: #2CB6F6;
+    font-weight: 500;
+    user-select: none;
+    pointer-events: none;
+}
+
+.room-selector.collapsed .collapsed-indicator {
+    display: block; 
+}
+
+.spinner { 
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(44, 182, 246, 0.3);
+    border-radius: 50%;
+    border-top-color: #2CB6F6;
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 8px; 
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.error-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0D1117 0%, #1A1D29 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1999; 
+    color: #E0E6F1;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.error-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.error-content {
+    text-align: center;
+    max-width: 500px;
+    padding: 2rem;
+}
+
+.error-title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #F77272;
+}
+
+.error-text {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+    color: #B0B8C5;
+}
+
+.retry-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #7F5AF0 0%, #2CB6F6 100%);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0, 0.2);
+}
+
+.retry-btn:hover {
+    background: linear-gradient(135deg, #8A6FF5 0%, #40C2F7 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 7px 15px rgba(127, 90, 240, 0.3);
+}
+
+#closeErrorAndEnterBtn {
+    background: #3D4F7C;
+}
+#closeErrorAndEnterBtn:hover {
+    background: #4C5F8A;
+    box-shadow: 0 7px 15px rgba(61, 79, 124, 0.25);
+}
+
+/* Enhanced VR/AR Button Styling with Icons */
+.a-enter-vr-button, .a-enter-ar-button {
+    position: fixed !important; 
+    bottom: 25px !important; 
+    right: 25px !important;
+    background: rgba(42, 47, 65, 0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(70, 80, 110, 0.6) !important;
+    border-radius: 12px !important; 
+    color: #2CB6F6 !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; 
+    
+    width: 52px !important; 
+    height: 52px !important;
+    padding: 0 !important;
+    
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 
+                inset 0 1px 0px rgba(255, 255, 255, 0.1) !important;
+    z-index: 9998 !important; 
+    cursor: pointer !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    display: flex !important; 
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+}
+
+/* AR Button positioning (when both exist) */
+.a-enter-ar-button {
+    right: 90px !important; /* Offset to the left of VR button */
+}
+
+.a-enter-vr-button:hover, .a-enter-ar-button:hover {
+    background: rgba(49, 55, 79, 0.95) !important;
+    border-color: rgba(70, 80, 110, 0.8) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0px rgba(255, 255, 255, 0.15) !important;
+    transform: translateY(-2px) !important;
+}
+
+.a-enter-vr-button:active, .a-enter-ar-button:active {
+    transform: translateY(0px) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Hide default A-Frame icons and text */
+.a-enter-vr-button svg,
+.a-enter-ar-button svg,
+.a-enter-vr-button span,
+.a-enter-ar-button span {
+    display: none !important; 
+}
+
+/* Add custom VR icon */
+.a-enter-vr-button::before {
+    content: '';
+    display: block;
+    width: 28px;
+    height: 28px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232CB6F6'%3E%3Cpath d='M20.5 6H3.5C2.67 6 2 6.67 2 7.5v9c0 .83.67 1.5 1.5 1.5H7l1.5-3h7l1.5 3h3.5c.83 0 1.5-.67 1.5-1.5v-9c0-.83-.67-1.5-1.5-1.5zM8 13.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm8 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* Add custom AR icon */
+.a-enter-ar-button::before {
+    content: '';
+    display: block;
+    width: 28px;
+    height: 28px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232CB6F6'%3E%3Cpath d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2zm0 4.25L10.16 9.5l-3.45.5 2.5 2.44-.59 3.44L12 14.25l3.38 1.63-.59-3.44 2.5-2.44-3.45-.5L12 6.25z'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* Mobile Responsive Design */
+@media screen and (max-width: 768px) {
+    .room-selector {
+        bottom: 15px;
+        left: 15px;
+        right: 15px;
+        min-width: auto;
+        max-width: calc(100vw - 140px); /* Leave space for VR/AR buttons */
+        padding: 15px;
+    }
+    
+    .room-selector.collapsed {
+        max-width: 120px;
+    }
+    
+    .room-input-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .room-input {
+        width: 100%;
+        box-sizing: border-box; /* Ensure padding doesn't add to width */
+        font-size: 16px; /* Prevent zoom on iOS */
+        padding: 14px 16px;
+    }
+    
+    .room-btn {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 14px 20px;
+        font-size: 16px;
+    }
+    
+    .loading-content {
+        padding: 1.5rem;
+        max-width: 90vw;
+    }
+    
+    .loading-title {
+        font-size: 1.8rem;
+    }
+    
+    .loading-text {
+        font-size: 1rem;
+    }
+    
+    .error-content {
+        padding: 1.5rem;
+        max-width: 90vw;
+    }
+    
+    .error-title {
+        font-size: 1.8rem;
+    }
+    
+    .error-text {
+        font-size: 1rem;
+    }
+    
+    /* Mobile VR/AR buttons */
+    .a-enter-vr-button, .a-enter-ar-button {
+        bottom: 15px !important;
+        right: 15px !important;
+        width: 48px !important;
+        height: 48px !important;
+    }
+    
+    .a-enter-ar-button {
+        right: 75px !important; /* 15px (right padding) + 48px (VR button width) + 12px (gap) */
+    }
+    
+    .a-enter-vr-button::before,
+    .a-enter-ar-button::before {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .room-selector {
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        max-width: calc(100vw - 120px); /* Adjust if AR/VR buttons change size */
+        padding: 12px;
+    }
+    
+    .room-selector.collapsed {
+        max-width: 100px;
+    }
+    
+    .loading-title {
+        font-size: 1.6rem;
+    }
+    
+    .error-title {
+        font-size: 1.6rem;
+    }
+    
+    /* Smaller mobile VR/AR buttons */
+    .a-enter-vr-button, .a-enter-ar-button {
+        bottom: 10px !important;
+        right: 10px !important;
+        width: 44px !important;
+        height: 44px !important;
+    }
+    
+    .a-enter-ar-button {
+        right: 65px !important; /* 10px + 44px + 11px */
+    }
+    
+    .a-enter-vr-button::before,
+    .a-enter-ar-button::before {
+        width: 22px;
+        height: 22px;
+    }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+    .room-btn:hover:before {
+        left: -100%; /* Keep shimmer effect off for touch unless active */
+    }
+    
+    .room-btn:active {
+        transform: scale(0.98);
+        background: linear-gradient(135deg, #6B47D9 0%, #1A9BDB 100%);
+    }
+     .room-btn:active:before { /* Trigger shimmer on active for touch */
+        left:100%;
+    }
+    
+    .minimize-btn:hover {
+        transform: none; 
+    }
+     .minimize-btn:active {
+        transform: scale(0.95);
+        background: rgba(70, 80, 110, 0.7);
+    }
+
+    .a-enter-vr-button:hover, .a-enter-ar-button:hover {
+        /* Keep hover state same as non-hover for touch unless active */
+        background: rgba(42, 47, 65, 0.95) !important;
+        border-color: rgba(70, 80, 110, 0.6) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 
+                    inset 0 1px 0px rgba(255, 255, 255, 0.1) !important;
+        transform: translateY(0px) !important;
+    }
+    .a-enter-vr-button:active, .a-enter-ar-button:active {
+        background: rgba(49, 55, 79, 0.95) !important; /* Use hover style for active */
+        transform: translateY(-1px) scale(0.98) !important; /* Slight press effect */
+    }
+}
+
+#ar-controls-container {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: rgba(31, 35, 51, 0.85); /* Similar to room selector */
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(70, 80, 110, 0.4);
+    border-radius: 8px;
+    padding: 15px;
+    color: #E0E6F1;
+    z-index: 10001; /* Above A-Frame canvas, potentially below other overlays if needed */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: none; /* Initial state, will be shown via JS */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+#ar-controls-container label {
+    margin-right: 10px;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+#ar-controls-container input[type="range"] {
+    vertical-align: middle;
+    width: 120px;
+    cursor: pointer;
+}
+
+#ar-controls-container span {
+    margin-left: 10px;
+    font-size: 14px;
+    min-width: 30px; /* Ensure space for text like "0.05" */
+    display: inline-block;
+    vertical-align: middle;
+    background-color: rgba(0,0,0,0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+
+/* Make sure A-Frame canvas doesn't obscure overlays when transparent */
+.a-canvas {
+    z-index: 0; /* Default, ensure it's behind our UI */
+}
+
+/* Touch device improvements for AR controls */
+@media (hover: none) and (pointer: coarse) {
+    #ar-controls-container input[type="range"] {
+        padding: 10px 0; /* Increase touch area for slider */
+    }
+}
