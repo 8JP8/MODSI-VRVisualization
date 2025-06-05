@@ -310,7 +310,7 @@ function renderSingleChart(chartIndex) {
     const existingButtons = root.querySelector(`[data-buttons-index="${chartIndex}"]`);
 
     if (existingChart) {
-        if (chartConfig.chart.chartType === "pizza" && existingChart.components && existingChart.components['babia-pie']) {
+        if (chartConfig.chart.chartType === "babia-pie" && existingChart.components && existingChart.components['babia-pie']) {
             existingChart.removeAttribute('babia-pie'); // Important for babia-pie re-rendering
         }
         // Delay removal and re-creation to ensure A-Frame processes attribute changes
@@ -425,7 +425,7 @@ function createChart(chartConfigData, originalIndex, valueType, timeType = 'year
     const timeLabel = TIME_TYPES[timeType] ? TIME_TYPES[timeType].label : 'Tempo';
     const chartTitle = `${chart.graphname || 'Gráfico'} (${productName} - ${timeLabel})`;
 
-    if (chart.chartType === "barras") {
+    if (chart.chartType === "babia-bars") {
         const chartData = processKPIData(kpihistory, kpiId, timeType, valueType);
         // BabiaXR bars component configuration
         const babiaConfig = `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: false; title: ${chartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 2 12 0; heightMax: 800; x_axis: key; height: height; data: ${JSON.stringify(chartData)}; showInfo: true; showInfoColor: #FFFFFF`;
