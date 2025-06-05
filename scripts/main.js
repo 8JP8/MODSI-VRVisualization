@@ -242,8 +242,18 @@ if (sceneEl) {
 
 // Chart and 3D Scene Configuration
 const POSITION_CONFIG = { startX: -5, baseY: 1.5, baseZ: 0, spacingX: 15, pieOffsetY: 3, bubbleOffsetY: 1 };
-const TIME_TYPES = { 'years': { label: 'Anos', next: 'months' }, 'months': { label: 'Meses', next: 'days' }, 'days': { label: 'Dias', next: 'years' } };
-const JSON_TIME_MAPPING = { 'Year': 'years', 'Month': 'months', 'Day': 'days', 'year': 'years', 'month': 'months', 'day': 'days', 'years': 'years', 'months': 'months', 'days': 'days' };
+const TIME_TYPES = {
+    'years': { label: 'Anos', next: 'months' },
+    'months': { label: 'Meses', next: 'days' },
+    'days': { label: 'Dias', next: 'byChange' },
+    'byChange': { label: 'By change', next: 'years' }
+};
+const JSON_TIME_MAPPING = {
+    'Year': 'years', 'Month': 'months', 'Day': 'days',
+    'year': 'years', 'month': 'months', 'day': 'days',
+    'years': 'years', 'months': 'months', 'days': 'days',
+    'byChange': 'byChange'
+};
 const CONSTANT_BUBBLE_RADIUS = 1;
 const BUBBLE_HEIGHT_VISUAL_SCALE_FACTOR = 20;
 const BUBBLE_CHART_CONTAINER_SCALE = "0.9 0.9 0.9";
@@ -253,6 +263,27 @@ let chartStates = {};
 
 function processKPIData(kpihistory, targetKPIId, timeAxisType, valueType = 'NewValue_1') {
     const kpiData = kpihistory.filter(item => item.KPIId == targetKPIId);
+
+    if (timeAxisType === 'byChange') {
+        const finalData = [];
+        // Sort by timestamp to ensure chronological order on the chart
+        const sortedKpiData = kpiData.sort((a, b) => new Date(a.ChangedAt) - new Date(b.ChangedAt));
+
+        sortedKpiData.forEach(item => {
+            const valueStr = valueType === 'NewValue_2' ? item.NewValue_2 : item.NewValue_1;
+            const value = parseFloat(valueStr);
+
+            if (valueStr != null && !isNaN(value)) {
+                const date = new Date(item.ChangedAt);
+                // Create a readable and unique key for each data point, including seconds
+                const timeKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+                finalData.push({ key: timeKey, height: value });
+            }
+        });
+        return finalData;
+    }
+
+    // --- Existing aggregation logic for years, months, days ---
     const dataByTimeKey = {};
     kpiData.forEach(item => {
         const date = new Date(item.ChangedAt);
@@ -264,6 +295,7 @@ function processKPIData(kpihistory, targetKPIId, timeAxisType, valueType = 'NewV
         if (!dataByTimeKey[timeKey]) dataByTimeKey[timeKey] = [];
         dataByTimeKey[timeKey].push({ ...item, parsedDate: date });
     });
+
     const finalData = [];
     Object.keys(dataByTimeKey).sort().forEach(timeKey => {
         const mostRecent = dataByTimeKey[timeKey].sort((a, b) => b.parsedDate - a.parsedDate)[0];
@@ -275,6 +307,7 @@ function processKPIData(kpihistory, targetKPIId, timeAxisType, valueType = 'NewV
     });
     return finalData;
 }
+
 
 function processPieData(kpihistory, targetKPIId, timeAxisType, valueType = 'NewValue_1') {
     return processKPIData(kpihistory, targetKPIId, timeAxisType, valueType).map(item => ({ key: item.key, size: item.height }));
@@ -314,12 +347,12 @@ function hasValidData(kpihistory, targetKPIId, valueType) {
     });
 }
 
-function calculatePosition(chartIndex, chartType = "barras") {
+function calculatePosition(chartIndex, chartType = "babia-bars") {
     const x = POSITION_CONFIG.startX + (chartIndex * POSITION_CONFIG.spacingX);
     let y = POSITION_CONFIG.baseY;
-    if (chartType === "pizza") {
+    if (chartType === "babia-pie") {
         y += POSITION_CONFIG.pieOffsetY;
-    } else if (chartType === "bubbles") {
+    } else if (chartType === "babia-bubbles") {
         y += POSITION_CONFIG.bubbleOffsetY;
     }
     return `${x} ${y} ${POSITION_CONFIG.baseZ}`;
@@ -330,7 +363,7 @@ function toggleChartValue(chartIndex) {
     if (!chartStates[chartIndex]) return;
     const chartConfig = chartsData[chartIndex];
     // Don't toggle for bubble charts as they show both products
-    if (chartConfig && (chartConfig.chart.chartType === "babia-bubbles" || chartConfig.chart.chartType === "bubbles")) {
+    if (chartConfig && (chartConfig.chart.chartType === "babia-bubbles")) {
         return;
     }
     chartStates[chartIndex].valueType = chartStates[chartIndex].valueType === 'NewValue_1' ? 'NewValue_2' : 'NewValue_1';
@@ -354,9 +387,9 @@ function renderSingleChart(chartIndex) {
     if (existingChart) {
         let babiaComponent = null;
         const chartType = chartConfig.chart.chartType;
-        if ((chartType === "babia-pie" || chartType === "pizza") && existingChart.components['babia-pie']) {
+        if ((chartType === "babia-pie") && existingChart.components['babia-pie']) {
             babiaComponent = 'babia-pie';
-        } else if (chartType === "bubbles" && existingChart.components['babia-bubbles']) {
+        } else if ((chartType === "babia-bubbles") && existingChart.components['babia-bubbles']) {
             babiaComponent = 'babia-bubbles';
         }
 
@@ -413,7 +446,7 @@ function createChartButtons(originalIndex, state, visibleIndex) {
     buttonsContainer.setAttribute('data-buttons-index', originalIndex);
     let buttonVerticalOffset = 0;
 
-    // Time type toggle button (Anos / Meses / Dias) - Placed ON TOP
+    // Time type toggle button (Anos / Meses / Dias / By change) - Placed ON TOP
     const timeButton = document.createElement('a-entity');
     timeButton.setAttribute('geometry', 'primitive: box; width: 2.5; height: 0.8; depth: 0.1');
     timeButton.setAttribute('material', 'color: #2196F3');
@@ -435,14 +468,14 @@ function createChartButtons(originalIndex, state, visibleIndex) {
 
     // Value toggle button (Produto 1 / Produto 2) - Placed BELOW time button
     // Only show if it's NOT a bubble chart and both products have data
-    if (chartType !== 'bubbles' && hasValue1 && hasValue2) {
+    if (chartType !== 'babia-bubbles' && hasValue1 && hasValue2) {
         const valueButton = document.createElement('a-entity');
         valueButton.setAttribute('geometry', 'primitive: box; width: 2.5; height: 0.8; depth: 0.1');
         valueButton.setAttribute('material', `color: ${state.valueType === 'NewValue_1' ? '#4CAF50' : '#FF9800'}`);
         valueButton.setAttribute('position', `3 ${buttonVerticalOffset} 0`);
         const valueText = document.createElement('a-text');
         valueText.setAttribute('value', state.valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2');
-        valueText.setAttribute('position', '0 0 0.6');
+        valueText.setAttribute('position', '0 0 0.1');
         valueText.setAttribute('align', 'center');
         valueText.setAttribute('color', 'white');
         valueText.setAttribute('width', '4');
@@ -471,12 +504,12 @@ function createChart(chartConfigData, originalIndex, valueType, timeType = 'year
     const productName = valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2';
     const timeLabel = TIME_TYPES[timeType] ? TIME_TYPES[timeType].label : 'Tempo';
 
-    if (chart.chartType === "babia-bars" || chart.chartType === "barras") {
+    if (chart.chartType === "babia-bars") {
         const chartData = processKPIData(kpihistory, kpiId, timeType, valueType);
         const chartTitle = `${chart.graphname || 'Gráfico'} (${productName} - ${timeLabel})`;
         const babiaConfig = `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: false; title: ${chartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 2 11 0; heightMax: 800; x_axis: key; height: height; data: ${JSON.stringify(chartData)}; showInfo: true; showInfoColor: #FFFFFF`;
         chartContainer.setAttribute('babia-bars', babiaConfig);
-    } else if (chart.chartType === "bubbles") {
+    } else if (chart.chartType === "babia-bubbles") {
         chartContainer.setAttribute('scale', BUBBLE_CHART_CONTAINER_SCALE);
         let bubbleData = processBubbleData(kpihistory, kpiId, timeType, CONSTANT_BUBBLE_RADIUS);
         let maxScaledHeight = 0;
@@ -491,7 +524,7 @@ function createChart(chartConfigData, originalIndex, valueType, timeType = 'year
         const bubbleChartTitle = `${chart.graphname || 'Gráfico'} (${timeLabel})`;
         const babiaConfig = `x_axis: key; z_axis: key2; height: height; radius: radius; legend: true; palette: foxy; animation: true; tooltip: true; title: ${bubbleChartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 0 ${bubbleTitleY} 0; heightMax: ${visualHeightMaxForBabia}; radiusMax: ${CONSTANT_BUBBLE_RADIUS}; data: ${JSON.stringify(bubbleData)}; showInfo: true; showInfoColor: #FFFFFF`;
         chartContainer.setAttribute('babia-bubbles', babiaConfig);
-    } else if (chart.chartType === "pizza") {
+    } else if (chart.chartType === "babia-pie") {
         let pieData = processPieData(kpihistory, kpiId, timeType, valueType);
         if (pieData.length === 0 || pieData.every(item => item.size === 0)) {
             pieData = [{ key: 'Sem Dados', size: 1 }];
