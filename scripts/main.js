@@ -196,8 +196,6 @@ async function connectToRoom(newRoomCode) {
 
     if (errorOverlay && !errorOverlay.classList.contains('visible')) { // Check if error overlay is NOT visible
         showRoomStatus(`Conectado à sala ${currentRoom} com sucesso!`, 'success');
-        // isCollapsed = false; // Already set above
-        // updateRoomSelectorCollapsedState();
     } else {
         showRoomStatus(`Falha ao carregar sala ${currentRoom}.`, 'error');
     }
@@ -234,21 +232,22 @@ if (sceneEl) {
         if (sceneEnvironment) sceneEnvironment.setAttribute('visible', true); // Ensure VR env is visible
     });
     sceneEl.addEventListener('exit-vr', () => {
-        // ARHandler's onExitAR will handle showing room selector if not in AR.
-        // This primarily handles exit from VR to 2D.
         const arModeActive = (typeof ARHandler !== 'undefined' && ARHandler.isARModeActive) ? ARHandler.isARModeActive() : false;
         if (!arModeActive) {
             showRoomSelector();
         }
     });
-    // AR enter/exit listeners are now managed by ARHandler.js
-    // It will call hideRoomSelector/showRoomSelector as needed.
 }
 
 
-const POSITION_CONFIG = { startX: -18, baseY: 1.5, baseZ: 12, spacingX: 12, pieOffsetY: 3 };
+// Chart and 3D Scene Configuration
+const POSITION_CONFIG = { startX: -5, baseY: 1.5, baseZ: 0, spacingX: 15, pieOffsetY: 3, bubbleOffsetY: 1 };
 const TIME_TYPES = { 'years': { label: 'Anos', next: 'months' }, 'months': { label: 'Meses', next: 'days' }, 'days': { label: 'Dias', next: 'years' } };
 const JSON_TIME_MAPPING = { 'Year': 'years', 'Month': 'months', 'Day': 'days', 'year': 'years', 'month': 'months', 'day': 'days', 'years': 'years', 'months': 'months', 'days': 'days' };
+const CONSTANT_BUBBLE_RADIUS = 1;
+const BUBBLE_HEIGHT_VISUAL_SCALE_FACTOR = 20;
+const BUBBLE_CHART_CONTAINER_SCALE = "0.9 0.9 0.9";
+
 let chartsData = [];
 let chartStates = {};
 
@@ -268,8 +267,11 @@ function processKPIData(kpihistory, targetKPIId, timeAxisType, valueType = 'NewV
     const finalData = [];
     Object.keys(dataByTimeKey).sort().forEach(timeKey => {
         const mostRecent = dataByTimeKey[timeKey].sort((a, b) => b.parsedDate - a.parsedDate)[0];
-        const value = valueType === 'NewValue_2' ? mostRecent.NewValue_2 : mostRecent.NewValue_1;
-        finalData.push({ key: timeKey, height: parseFloat(value) || 0 });
+        const valueStr = valueType === 'NewValue_2' ? mostRecent.NewValue_2 : mostRecent.NewValue_1;
+        const value = parseFloat(valueStr);
+        if (valueStr != null && !isNaN(value)) {
+            finalData.push({ key: timeKey, height: value });
+        }
     });
     return finalData;
 }
@@ -278,19 +280,59 @@ function processPieData(kpihistory, targetKPIId, timeAxisType, valueType = 'NewV
     return processKPIData(kpihistory, targetKPIId, timeAxisType, valueType).map(item => ({ key: item.key, size: item.height }));
 }
 
-function hasValidData(kpihistory, targetKPIId, valueType) {
-    return kpihistory.filter(item => item.KPIId == targetKPIId)
-                     .some(item => (valueType === 'NewValue_2' ? item.NewValue_2 : item.NewValue_1) != null && parseFloat(valueType === 'NewValue_2' ? item.NewValue_2 : item.NewValue_1) !== 0);
+function processBubbleData(kpihistory, targetKPIId, timeAxisType, constantRadius = CONSTANT_BUBBLE_RADIUS) {
+    const bubbleChartData = [];
+    const dataProduct1 = processKPIData(kpihistory, targetKPIId, timeAxisType, 'NewValue_1');
+    dataProduct1.forEach(item => {
+        if (item.height > 0) {
+            bubbleChartData.push({
+                key: item.key, key2: "produto 1",
+                height: item.height / BUBBLE_HEIGHT_VISUAL_SCALE_FACTOR,
+                originalHeight: item.height, radius: constantRadius
+            });
+        }
+    });
+    const dataProduct2 = processKPIData(kpihistory, targetKPIId, timeAxisType, 'NewValue_2');
+    dataProduct2.forEach(item => {
+         if (item.height > 0) {
+            bubbleChartData.push({
+                key: item.key, key2: "produto 2",
+                height: item.height / BUBBLE_HEIGHT_VISUAL_SCALE_FACTOR,
+                originalHeight: item.height, radius: constantRadius
+            });
+        }
+    });
+    return bubbleChartData;
 }
 
-function calculatePosition(chartIndex, isPieChart = false) {
+function hasValidData(kpihistory, targetKPIId, valueType) {
+    const kpiData = kpihistory.filter(item => item.KPIId == targetKPIId);
+    return kpiData.some(item => {
+        const value = valueType === 'NewValue_2' ? item.NewValue_2 : item.NewValue_1;
+        const parsedValue = parseFloat(value);
+        return value != null && !isNaN(parsedValue) && parsedValue !== 0;
+    });
+}
+
+function calculatePosition(chartIndex, chartType = "barras") {
     const x = POSITION_CONFIG.startX + (chartIndex * POSITION_CONFIG.spacingX);
-    const y = POSITION_CONFIG.baseY + (isPieChart ? POSITION_CONFIG.pieOffsetY : 0);
+    let y = POSITION_CONFIG.baseY;
+    if (chartType === "pizza") {
+        y += POSITION_CONFIG.pieOffsetY;
+    } else if (chartType === "bubbles") {
+        y += POSITION_CONFIG.bubbleOffsetY;
+    }
     return `${x} ${y} ${POSITION_CONFIG.baseZ}`;
 }
 
+
 function toggleChartValue(chartIndex) {
     if (!chartStates[chartIndex]) return;
+    const chartConfig = chartsData[chartIndex];
+    // Don't toggle for bubble charts as they show both products
+    if (chartConfig && chartConfig.chart.chartType === "bubbles") {
+        return;
+    }
     chartStates[chartIndex].valueType = chartStates[chartIndex].valueType === 'NewValue_1' ? 'NewValue_2' : 'NewValue_1';
     renderSingleChart(chartIndex);
 }
@@ -310,17 +352,24 @@ function renderSingleChart(chartIndex) {
     const existingButtons = root.querySelector(`[data-buttons-index="${chartIndex}"]`);
 
     if (existingChart) {
-        if ((chartConfig.chart.chartType === "babia-pie" || chartConfig.chart.chartType === "pizza") && existingChart.components && existingChart.components['babia-pie']) {
-            existingChart.removeAttribute('babia-pie'); // Important for babia-pie re-rendering
+        let babiaComponent = null;
+        const chartType = chartConfig.chart.chartType;
+        if ((chartType === "babia-pie" || chartType === "pizza") && existingChart.components['babia-pie']) {
+            babiaComponent = 'babia-pie';
+        } else if (chartType === "bubbles" && existingChart.components['babia-bubbles']) {
+            babiaComponent = 'babia-bubbles';
         }
-        // Delay removal and re-creation to ensure A-Frame processes attribute changes
+
+        if (babiaComponent) {
+            existingChart.removeAttribute(babiaComponent); // Important for re-rendering complex components
+        }
+
         setTimeout(() => {
             if (existingChart.parentNode) existingChart.parentNode.removeChild(existingChart);
             if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
 
-            // Recalculate visibleIndex based on current chartsData and their validity
             let visibleChartIndex = 0;
-            for(let i=0; i < chartIndex; i++){ // Iterate up to the current chart's original index
+            for(let i=0; i < chartIndex; i++){
                 if(chartsData[i] && chartStates[i] && (hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_1') || hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_2'))){
                     visibleChartIndex++;
                 }
@@ -330,8 +379,8 @@ function renderSingleChart(chartIndex) {
             if (chartEl) root.appendChild(chartEl);
             const buttonsEl = createChartButtons(chartIndex, state, visibleChartIndex);
             if (buttonsEl) root.appendChild(buttonsEl);
-        }, 50); 
-    } else { // If chart doesn't exist, create it (less common path if renderAllCharts is robust)
+        }, 50);
+    } else {
          if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
 
          let visibleChartIndex = 0;
@@ -351,47 +400,24 @@ function createChartButtons(originalIndex, state, visibleIndex) {
     const chartConfig = chartsData[originalIndex];
     if (!chartConfig || !chartConfig.chart) return null;
 
-    const position = calculatePosition(visibleIndex, false); // Buttons are not pie charts for positioning
-    const [x, y, z] = position.split(' ').map(parseFloat);
+    const chartType = chartConfig.chart.chartType;
+    const posString = calculatePosition(visibleIndex, chartType);
+    const [x, y, z] = posString.split(' ').map(parseFloat);
+
     const kpiId = parseInt(chartConfig.chart.zAxis);
     const hasValue1 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1');
     const hasValue2 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2');
 
     const buttonsContainer = document.createElement('a-entity');
-    buttonsContainer.setAttribute('position', `${x + 6} ${parseFloat(y) + 8} ${z}`); // Adjust button panel position relative to chart
+    buttonsContainer.setAttribute('position', `${x - 7} ${parseFloat(y) + 6} ${z}`); // Position to the LEFT of the chart
     buttonsContainer.setAttribute('data-buttons-index', originalIndex);
     let buttonVerticalOffset = 0;
 
-    // Value toggle button (Produto 1 / Produto 2)
-    if (hasValue1 && hasValue2) { // Only show if both products have data
-        const valueButton = document.createElement('a-entity');
-        valueButton.setAttribute('geometry', 'primitive: box; width: 2.5; height: 0.8; depth: 0.1');
-        valueButton.setAttribute('material', `color: ${state.valueType === 'NewValue_1' ? '#4CAF50' : '#FF9800'}`);
-        valueButton.setAttribute('position', `0 ${buttonVerticalOffset} 0`);
-        
-        const valueText = document.createElement('a-text');
-        valueText.setAttribute('value', state.valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2');
-        valueText.setAttribute('position', '0 0 0.06'); // Slightly in front of the button
-        valueText.setAttribute('align', 'center');
-        valueText.setAttribute('color', 'white');
-        valueText.setAttribute('width', '4'); // Text width for wrapping/scaling
-        valueButton.appendChild(valueText);
-
-        valueButton.setAttribute('class', 'clickable'); // For cursor interaction
-        valueButton.addEventListener('click', (event) => { 
-            event.stopPropagation(); // Prevent scene-level clicks if any
-            setTimeout(() => toggleChartValue(originalIndex), 100); // Timeout for A-Frame to process click
-        });
-        buttonsContainer.appendChild(valueButton);
-        buttonVerticalOffset -= 1.2; // Space for next button
-    }
-
-    // Time type toggle button (Anos / Meses / Dias)
+    // Time type toggle button (Anos / Meses / Dias) - Placed ON TOP
     const timeButton = document.createElement('a-entity');
     timeButton.setAttribute('geometry', 'primitive: box; width: 2.5; height: 0.8; depth: 0.1');
-    timeButton.setAttribute('material', 'color: #2196F3'); // Blue color
-    timeButton.setAttribute('position', `0 ${buttonVerticalOffset} 0`);
-
+    timeButton.setAttribute('material', 'color: #2196F3');
+    timeButton.setAttribute('position', `3 ${buttonVerticalOffset} 0`);
     const timeText = document.createElement('a-text');
     timeText.setAttribute('value', TIME_TYPES[state.timeType] ? TIME_TYPES[state.timeType].label : 'Tempo');
     timeText.setAttribute('position', '0 0 0.06');
@@ -399,13 +425,35 @@ function createChartButtons(originalIndex, state, visibleIndex) {
     timeText.setAttribute('color', 'white');
     timeText.setAttribute('width', '4');
     timeButton.appendChild(timeText);
-
     timeButton.setAttribute('class', 'clickable');
-    timeButton.addEventListener('click', (event) => { 
+    timeButton.addEventListener('click', (event) => {
         event.stopPropagation();
         setTimeout(() => toggleChartTimeType(originalIndex), 100);
     });
     buttonsContainer.appendChild(timeButton);
+    buttonVerticalOffset -= 1.2; // Space for the next button below
+
+    // Value toggle button (Produto 1 / Produto 2) - Placed BELOW time button
+    // Only show if it's NOT a bubble chart and both products have data
+    if (chartType !== 'bubbles' && hasValue1 && hasValue2) {
+        const valueButton = document.createElement('a-entity');
+        valueButton.setAttribute('geometry', 'primitive: box; width: 2.5; height: 0.8; depth: 0.1');
+        valueButton.setAttribute('material', `color: ${state.valueType === 'NewValue_1' ? '#4CAF50' : '#FF9800'}`);
+        valueButton.setAttribute('position', `3 ${buttonVerticalOffset} 0`);
+        const valueText = document.createElement('a-text');
+        valueText.setAttribute('value', state.valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2');
+        valueText.setAttribute('position', '0 0 0.6');
+        valueText.setAttribute('align', 'center');
+        valueText.setAttribute('color', 'white');
+        valueText.setAttribute('width', '4');
+        valueButton.appendChild(valueText);
+        valueButton.setAttribute('class', 'clickable');
+        valueButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            setTimeout(() => toggleChartValue(originalIndex), 100);
+        });
+        buttonsContainer.appendChild(valueButton);
+    }
     return buttonsContainer;
 }
 
@@ -415,47 +463,57 @@ function createChart(chartConfigData, originalIndex, valueType, timeType = 'year
 
     const kpiId = parseInt(chart.zAxis);
     const chartContainer = document.createElement('a-entity');
-    const isPieChart = chart.chartType === "pizza";
 
-    chartContainer.setAttribute('position', calculatePosition(visibleIndex, isPieChart));
-    chartContainer.setAttribute('data-chart-index', originalIndex); // For re-finding this chart
+    chartContainer.setAttribute('position', calculatePosition(visibleIndex, chart.chartType));
+    chartContainer.setAttribute('data-chart-index', originalIndex);
 
-    const palette = valueType === 'NewValue_1' ? 'commerce' : 'ubuntu'; // Example palettes
+    const palette = valueType === 'NewValue_1' ? 'commerce' : 'ubuntu';
     const productName = valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2';
     const timeLabel = TIME_TYPES[timeType] ? TIME_TYPES[timeType].label : 'Tempo';
-    const chartTitle = `${chart.graphname || 'Gráfico'} (${productName} - ${timeLabel})`;
 
     if (chart.chartType === "babia-bars" || chart.chartType === "barras") {
         const chartData = processKPIData(kpihistory, kpiId, timeType, valueType);
-        // BabiaXR bars component configuration
-        const babiaConfig = `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: false; title: ${chartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 2 12 0; heightMax: 800; x_axis: key; height: height; data: ${JSON.stringify(chartData)}; showInfo: true; showInfoColor: #FFFFFF`;
+        const chartTitle = `${chart.graphname || 'Gráfico'} (${productName} - ${timeLabel})`;
+        const babiaConfig = `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: false; title: ${chartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 2 11 0; heightMax: 800; x_axis: key; height: height; data: ${JSON.stringify(chartData)}; showInfo: true; showInfoColor: #FFFFFF`;
         chartContainer.setAttribute('babia-bars', babiaConfig);
+    } else if (chart.chartType === "bubbles") {
+        chartContainer.setAttribute('scale', BUBBLE_CHART_CONTAINER_SCALE);
+        let bubbleData = processBubbleData(kpihistory, kpiId, timeType, CONSTANT_BUBBLE_RADIUS);
+        let maxScaledHeight = 0;
+        if (bubbleData.length > 0) {
+            maxScaledHeight = Math.max(...bubbleData.map(d => d.height));
+        } else {
+            bubbleData.push({ key: 'Sem Dados', key2: 'N/A', height: 1 / BUBBLE_HEIGHT_VISUAL_SCALE_FACTOR, originalHeight: 1, radius: CONSTANT_BUBBLE_RADIUS });
+            maxScaledHeight = 1 / BUBBLE_HEIGHT_VISUAL_SCALE_FACTOR;
+        }
+        const visualHeightMaxForBabia = maxScaledHeight > 0 ? Math.ceil(maxScaledHeight * 1.1) : 5;
+        const bubbleTitleY = (visualHeightMaxForBabia + 2) / parseFloat(BUBBLE_CHART_CONTAINER_SCALE.split(" ")[1]);
+        const bubbleChartTitle = `${chart.graphname || 'Gráfico'} (${timeLabel})`;
+        const babiaConfig = `x_axis: key; z_axis: key2; height: height; radius: radius; legend: true; palette: foxy; animation: true; tooltip: true; title: ${bubbleChartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 0 ${bubbleTitleY} 0; heightMax: ${visualHeightMaxForBabia}; radiusMax: ${CONSTANT_BUBBLE_RADIUS}; data: ${JSON.stringify(bubbleData)}; showInfo: true; showInfoColor: #FFFFFF`;
+        chartContainer.setAttribute('babia-bubbles', babiaConfig);
     } else if (chart.chartType === "pizza") {
         let pieData = processPieData(kpihistory, kpiId, timeType, valueType);
-        // If no data or all data is zero, provide a default slice to render something
         if (pieData.length === 0 || pieData.every(item => item.size === 0)) {
             pieData = [{ key: 'Sem Dados', size: 1 }];
         }
-        
-        // For pie charts, BabiaXR might not have a title attribute directly in babia-pie.
-        // Create a separate title entity if needed.
+        const chartTitle = `${chart.graphname || 'Gráfico'} (${productName} - ${timeLabel})`;
         const titleEl = document.createElement('a-text');
         titleEl.setAttribute('value', chartTitle);
-        titleEl.setAttribute('position', '1 6 0'); // Position title above the pie
+        titleEl.setAttribute('position', '1 6 0');
         titleEl.setAttribute('align', 'center');
-        titleEl.setAttribute('color', '#FFFFFF'); // White title
-        titleEl.setAttribute('width', '8'); // Text width for wrapping
+        titleEl.setAttribute('color', '#FFFFFF');
+        titleEl.setAttribute('width', '8');
         chartContainer.appendChild(titleEl);
-
-        const pieEl = document.createElement('a-entity'); // Pie chart itself
+        const pieEl = document.createElement('a-entity');
         const pieConfig = `legend: true; palette: ${palette}; animation: false; key: key; size: size; data: ${JSON.stringify(pieData)}; showInfo: true; showInfoColor: #FFFFFF`;
         pieEl.setAttribute('babia-pie', pieConfig);
-        pieEl.setAttribute('rotation', '90 0 0'); // Rotate pie to be flat on XZ plane
-        pieEl.setAttribute('scale', '1.8 1.8 1.8'); // Adjust scale if needed
+        pieEl.setAttribute('rotation', '90 0 0');
+        pieEl.setAttribute('scale', '1.8 1.8 1.8');
         chartContainer.appendChild(pieEl);
     }
     return chartContainer;
 }
+
 
 function clearCharts() {
     if (!root) return;
@@ -467,21 +525,19 @@ function clearCharts() {
 }
 
 function getDefaultTimeType(chart) {
-    // Determine default time type from chart configuration if available
     const timeUnit = chart.xAxis || chart.timeUnit || chart.xAxisUnit || chart.temporalUnit;
-    return JSON_TIME_MAPPING[timeUnit] || 'years'; // Default to 'years' if not specified
+    return JSON_TIME_MAPPING[timeUnit] || 'years';
 }
 
 function initializeChartStates() {
-    chartStates = {}; // Reset states
+    chartStates = {};
     chartsData.forEach((chartConfig, index) => {
         if (!chartConfig.chart) return;
         const kpiId = parseInt(chartConfig.chart.zAxis);
-        // Determine default valueType (NewValue_1 or NewValue_2)
         const hasValue1 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1');
         const hasValue2 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2');
         let defaultValueType = 'NewValue_1';
-        if (!hasValue1 && hasValue2) { // If only NewValue_2 has data, use it
+        if (!hasValue1 && hasValue2) {
             defaultValueType = 'NewValue_2';
         }
         chartStates[index] = {
@@ -493,20 +549,18 @@ function initializeChartStates() {
 
 function renderAllCharts() {
     if (!root) return;
-    // Clear existing charts before rendering all
     while (root.firstChild) {
         root.removeChild(root.firstChild);
     }
 
-    let visibleChartIndex = 0; // To calculate position for only valid charts
+    let visibleChartIndex = 0;
     chartsData.forEach((chartConfig, originalIndex) => {
         if (!chartConfig.chart || !chartConfig.kpihistory) return;
         const kpiId = parseInt(chartConfig.chart.zAxis);
         
-        // Check if this chart has any valid data for either product type
         if (hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1') || hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2')) {
             const state = chartStates[originalIndex];
-            if (!state) { // Should not happen if initializeChartStates was called
+            if (!state) {
                 console.warn(`State not found for chart index ${originalIndex}. Skipping.`);
                 return;
             }
@@ -516,7 +570,7 @@ function renderAllCharts() {
             const buttonsEl = createChartButtons(originalIndex, state, visibleChartIndex);
             if (buttonsEl) root.appendChild(buttonsEl);
             
-            visibleChartIndex++; // Increment only for charts that are actually rendered
+            visibleChartIndex++;
         }
     });
 }
@@ -536,7 +590,6 @@ async function fetchDataFromAPI(roomCode, retries = 3) {
             if (!data) {
                 throw new Error('Nenhum dado recebido da API');
             }
-            // Validate data structure (basic check)
             if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].config === 'object' &&
                 Array.isArray(data[0].config.kpihistory) && Array.isArray(data[0].config.charts)) {
                 return data;
@@ -545,9 +598,9 @@ async function fetchDataFromAPI(roomCode, retries = 3) {
         } catch (error) {
             console.error(`Tentativa ${attempt} falhou: ${error.message}`);
             if (attempt === retries) {
-                throw error; // Re-throw last error
+                throw error;
             }
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
         }
     }
 }
@@ -555,9 +608,8 @@ async function fetchDataFromAPI(roomCode, retries = 3) {
 async function initializeApp(attemptLoadFromUrl = true) {
     const roomFromUrl = getRoomFromURL();
     let roomToLoad = null;
-    let localIsCollapsed = false; // For room selector state
+    let localIsCollapsed = false;
 
-    // Reset AR state if ARHandler is available
     if (typeof ARHandler !== 'undefined' && ARHandler.resetARStateForAppReinit) {
         ARHandler.resetARStateForAppReinit();
     }
@@ -570,13 +622,12 @@ async function initializeApp(attemptLoadFromUrl = true) {
         currentRoom = roomToLoad;
         syncRoomUI(currentRoom);
         showLoading(true, currentRoom);
-        showError(false); // Clear previous errors
+        showError(false);
 
         try {
             console.log(`Initializing application for room: ${currentRoom}...`);
             const apiDataArray = await fetchDataFromAPI(currentRoom);
 
-            // Assuming data structure [ { "config": { "kpihistory": [], "charts": [] } } ]
             const config = apiDataArray[0].config;
             const kpihistoryFromConfig = config.kpihistory;
             const chartsFromConfig = config.charts;
@@ -585,48 +636,45 @@ async function initializeApp(attemptLoadFromUrl = true) {
                 throw new Error('Missing kpihistory or charts in API response config.');
             }
 
-            // Prepare chartsData by combining kpihistory with each chart config
-            chartsData = []; // Clear previous charts data
+            chartsData = [];
             chartsFromConfig.forEach(chart => {
                 chartsData.push({
-                    kpihistory: kpihistoryFromConfig, // Share kpihistory among charts
+                    kpihistory: kpihistoryFromConfig,
                     chart: chart
                 });
             });
 
             if (chartsData.length === 0) {
                 console.warn('Nenhum gráfico encontrado nos dados para esta sala.');
-                clearCharts(); // Ensure display is clean
+                clearCharts();
             } else {
-                initializeChartStates(); // Setup initial states for valueType and timeType
-                renderAllCharts();       // Render all valid charts
+                initializeChartStates();
+                renderAllCharts();
             }
 
-            localIsCollapsed = true; // Collapse room selector after successful load
+            localIsCollapsed = true;
 
-            setTimeout(() => showLoading(false), 500); // Give a moment for rendering
+            setTimeout(() => showLoading(false), 500);
             console.log(`Application initialized successfully for room: ${currentRoom}`);
 
         } catch (error) {
             console.error(`Falha ao inicializar para a sala ${currentRoom}:`, error);
-            localIsCollapsed = false; // Keep room selector open on error
+            localIsCollapsed = false;
             showLoading(false);
             showError(true, `Falha ao carregar dados da sala ${currentRoom}: ${error.message}`);
         }
     } else {
-        // No room to load from URL, setup for manual room entry
-        localIsCollapsed = false; // Keep room selector open
-        syncRoomUI(currentRoom); // Sync with default or last known room
+        localIsCollapsed = false;
+        syncRoomUI(currentRoom);
         showLoading(false);
         showError(false);
-        clearCharts(); // Clear any existing charts
+        clearCharts();
         console.log("Nenhuma sala especificada na URL para carregamento automático. Seletor de sala ativo. Sala de contexto: " + currentRoom);
     }
 
     isCollapsed = localIsCollapsed;
     updateRoomSelectorCollapsedState();
 
-    // Show room selector only if not in VR or AR mode.
     const arModeActive = (typeof ARHandler !== 'undefined' && ARHandler.isARModeActive) ? ARHandler.isARModeActive() : false;
     if (sceneEl && !sceneEl.is('vr-mode') && !arModeActive) {
         showRoomSelector();
@@ -640,21 +688,17 @@ window.addEventListener('load', () => {
         closeBtn.addEventListener('click', closeErrorAndEnterEnvironment);
     }
     
-    // Initialize AR Handler, passing necessary functions from main.js
     if (typeof ARHandler !== 'undefined' && ARHandler.init) {
         ARHandler.init(hideRoomSelector, showRoomSelector);
     } else {
         console.error("ARHandler is not defined. AR features might not work.");
     }
 
-    initializeApp(true); // Initial application load sequence
+    initializeApp(true);
 });
 
 if (sceneEl) {
     sceneEl.addEventListener('loaded', () => {
         console.log('A-Frame scene loaded');
-        // Any specific logic after A-Frame scene itself is fully parsed and ready.
-        // ARHandler's init also has a DOMContentLoaded and element check,
-        // so this is more for A-Frame specific post-load tasks if any.
     });
 }
