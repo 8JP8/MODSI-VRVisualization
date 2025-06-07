@@ -241,12 +241,12 @@ if (sceneEl) {
 
 
 // Chart and 3D Scene Configuration
-const POSITION_CONFIG = { startX: -10, baseY: 1.5, baseZ: 0, spacingX: 10, pieOffsetY: 3, bubbleOffsetY: 1 };
+const POSITION_CONFIG = { startX: -10, baseY: 1.5, baseZ: 0, spacingX: 10, pieOffsetY: 3, bubbleOffsetY: 1, cylinderOffsetY: 0 };
 const TIME_TYPES = {
     'years': { label: 'Anos', next: 'months' },
     'months': { label: 'Meses', next: 'days' },
     'days': { label: 'Dias', next: 'byChange' },
-    'byChange': { label: 'Alteração', next: 'years' }
+    'byChange': { label: 'Alteracao', next: 'years' }
 };
 const JSON_TIME_MAPPING = {
     'Year': 'years', 'Month': 'months', 'Day': 'days',
@@ -254,9 +254,16 @@ const JSON_TIME_MAPPING = {
     'years': 'years', 'months': 'months', 'days': 'days',
     'byChange': 'change'
 };
-const CONSTANT_BUBBLE_RADIUS = 1;
+const CONSTANT_BUBBLE_RADIUS = 0.5;
+const BUBBLE_HEIGHT_VISUAL_SCALE_FACTOR = 20;
 const BUBBLE_CHART_VISUAL_HEIGHT_MAX = 8; // The fixed visual height for the chart's Y-axis.
 const BUBBLE_CHART_CONTAINER_SCALE = "0.9 0.9 0.9";
+
+// --- NEW: Cylinder Chart Constants ---
+const CONSTANT_CYLINDER_RADIUS = 0.80;
+const CYLINDER_HEIGHT_VISUAL_SCALE_FACTOR = 1;
+const CYLINDER_CHART_CONTAINER_SCALE = "1 1 1";
+
 
 let chartsData = [];
 let chartStates = {};
@@ -351,14 +358,14 @@ function hasValidData(kpihistory, targetKPIId, valueType) {
     });
 }
 
+// --- UPDATED: Added babia-cyls case ---
 function calculatePosition(chartIndex, chartType = "babia-bars") {
     const x = POSITION_CONFIG.startX + (chartIndex * POSITION_CONFIG.spacingX);
     let y = POSITION_CONFIG.baseY;
-    if (chartType === "babia-pie") {
-        y += POSITION_CONFIG.pieOffsetY;
-    } else if (chartType === "babia-bubbles") {
-        y += POSITION_CONFIG.bubbleOffsetY;
-    }
+    if (chartType === "babia-pie") y += POSITION_CONFIG.pieOffsetY;
+    else if (chartType === "babia-bubbles") y += POSITION_CONFIG.bubbleOffsetY;
+    else if (chartType === "babia-cyls") y += POSITION_CONFIG.cylinderOffsetY;
+
     return `${x} ${y} ${POSITION_CONFIG.baseZ}`;
 }
 
@@ -380,6 +387,7 @@ function toggleChartTimeType(chartIndex) {
     renderSingleChart(chartIndex);
 }
 
+// --- UPDATED: Component removal logic now includes babia-cyls ---
 function renderSingleChart(chartIndex) {
     const chartConfig = chartsData[chartIndex];
     const state = chartStates[chartIndex];
@@ -395,7 +403,10 @@ function renderSingleChart(chartIndex) {
             babiaComponent = 'babia-pie';
         } else if ((chartType === "babia-bubbles") && existingChart.components['babia-bubbles']) {
             babiaComponent = 'babia-bubbles';
+        } else if ((chartType === "babia-cyls") && existingChart.components['babia-cyls']) {
+            babiaComponent = 'babia-cyls';
         }
+
 
         if (babiaComponent) {
             existingChart.removeAttribute(babiaComponent); // Important for re-rendering complex components
@@ -497,6 +508,7 @@ function createChartButtons(originalIndex, state, visibleIndex) {
     return buttonsContainer;
 }
 
+// --- UPDATED: Added babia-cyls chart creation logic ---
 function createChart(chartConfigData, originalIndex, valueType, timeType = 'years', visibleIndex) {
     const { kpihistory, chart } = chartConfigData;
     if (!kpihistory || !chart) return null;
@@ -520,21 +532,11 @@ function createChart(chartConfigData, originalIndex, valueType, timeType = 'year
         chartContainer.setAttribute('scale', BUBBLE_CHART_CONTAINER_SCALE);
         let bubbleData = processBubbleData(kpihistory, kpiId, timeType, CONSTANT_BUBBLE_RADIUS);
 
-        // Handle case where there is valid data but none of it is positive.
-        // This adds a single, zero-height data point to ensure the component
-        // still renders the chart plane and axes, but without any visible bubbles.
         if (bubbleData.length === 0) {
             bubbleData.push({ key: 'Sem dados positivos', key2: '', height: 0, radius: 0 });
         }
-
-        // Calculate title position based on the fixed visual height.
-        // The title is positioned relative to the container's scale.
         const titleYPosition = (BUBBLE_CHART_VISUAL_HEIGHT_MAX + 2) / parseFloat(BUBBLE_CHART_CONTAINER_SCALE.split(" ")[1]);
-        
         const bubbleChartTitle = `${chart.graphname || 'Gráfico'} (${timeLabel})`;
-        
-        // babia-bubbles will auto-scale the data. The bubble with the max data value
-        // will have its height rendered at BUBBLE_CHART_VISUAL_HEIGHT_MAX.
         const babiaConfig = `x_axis: key; z_axis: key2; height: height; radius: radius; legend: true; palette: foxy; animation: true; tooltip: true; title: ${bubbleChartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 0 ${titleYPosition} 0; heightMax: ${BUBBLE_CHART_VISUAL_HEIGHT_MAX}; radiusMax: ${CONSTANT_BUBBLE_RADIUS}; data: ${JSON.stringify(bubbleData)}; showInfo: true; showInfoColor: #FFFFFF`;
         chartContainer.setAttribute('babia-bubbles', babiaConfig);
     } else if (chart.chartType === "babia-pie") {
@@ -556,6 +558,34 @@ function createChart(chartConfigData, originalIndex, valueType, timeType = 'year
         pieEl.setAttribute('rotation', '90 0 0');
         pieEl.setAttribute('scale', '1.8 1.8 1.8');
         chartContainer.appendChild(pieEl);
+    } else if (chart.chartType === "babia-cyls") {
+        let cylinderRawData = processKPIData(kpihistory, kpiId, timeType, valueType);
+        const cylinderData = cylinderRawData.map(item => ({
+            key: item.key,
+            height: item.height / CYLINDER_HEIGHT_VISUAL_SCALE_FACTOR,
+            radius: CONSTANT_CYLINDER_RADIUS
+        }));
+
+        if (cylinderData.length === 0) {
+             cylinderData.push({ key: 'Sem Dados', height: 0.1, radius: CONSTANT_CYLINDER_RADIUS });
+        }
+
+        let maxCylinderHeight = 0;
+        if(cylinderData.length > 0) {
+            maxCylinderHeight = Math.max(...cylinderData.map(d => d.height));
+        }
+        const visualCylinderHeightMax = maxCylinderHeight > 0 ? Math.ceil(maxCylinderHeight * 1.1) : 10;
+        
+        chartContainer.setAttribute('scale', CYLINDER_CHART_CONTAINER_SCALE);
+
+        const chartTitle = `${chart.graphname || 'Gráfico'} (${productName} - ${timeLabel})`;
+        const babiaConfig = `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: false; ` +
+                            `title: ${chartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; ` +
+                            `titlePosition: 2 11 0; heightMax: ${visualCylinderHeightMax}; ` +
+                            `radiusMax: ${CONSTANT_CYLINDER_RADIUS}; x_axis: key; height: height; radius: radius; ` +
+                            `data: ${JSON.stringify(cylinderData)}; showInfo: true; showInfoColor: #FFFFFF`;
+        
+        chartContainer.setAttribute('babia-cyls', babiaConfig);
     }
     return chartContainer;
 }
