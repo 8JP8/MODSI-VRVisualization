@@ -82,7 +82,7 @@
         <!-- Camera Rig -->
         <a-entity id="camera-rig" movement-controls="fly: true" position="-3 5 20">
             <a-entity id="camera" camera position="0 0 0" look-controls wasd-controls="enabled:false"></a-entity> <!-- wasd-controls disabled to avoid conflict with movement-controls -->
-            <a-entity cursor="rayOrigin:mouse" raycaster="objects: .clickable"></a-entity> <!-- objects: .clickable to target specific entities -->
+            <a-entity cursor="rayOrigin:mouse" raycaster></a-entity>
             <a-entity laser-controls="hand: right" raycaster="objects: .clickable"></a-entity>
         </a-entity>
     </a-scene>
