@@ -125,11 +125,7 @@ function closeErrorAndEnterEnvironment() {
     showError(false);
     showLoading(false);
     clearCharts();
-    // Check AR mode before showing room selector
-    const arModeActive = (typeof ARHandler !== 'undefined' && ARHandler.isARModeActive) ? ARHandler.isARModeActive() : false;
-    if (!arModeActive) {
-        showRoomSelector();
-    }
+    showRoomSelector();
     syncRoomUI(currentRoom);
     console.log("Error overlay closed. Context room: " + currentRoom);
 }
@@ -210,9 +206,7 @@ function handleFullscreenChange() {
                         document.mozFullScreenElement ||
                         document.msFullscreenElement;
 
-    const arModeActive = (typeof ARHandler !== 'undefined' && ARHandler.isARModeActive) ? ARHandler.isARModeActive() : false;
-
-    if (isFullscreen || (sceneEl && sceneEl.is('vr-mode')) || arModeActive) {
+    if (isFullscreen || (sceneEl && sceneEl.is('vr-mode'))) {
         hideRoomSelector();
     } else {
         showRoomSelector();
@@ -232,10 +226,7 @@ if (sceneEl) {
         if (sceneEnvironment) sceneEnvironment.setAttribute('visible', true); // Ensure VR env is visible
     });
     sceneEl.addEventListener('exit-vr', () => {
-        const arModeActive = (typeof ARHandler !== 'undefined' && ARHandler.isARModeActive) ? ARHandler.isARModeActive() : false;
-        if (!arModeActive) {
-            showRoomSelector();
-        }
+        showRoomSelector();
     });
 }
 
@@ -575,7 +566,7 @@ function createChart(chartConfigData, originalIndex, valueType, timeType = 'year
             maxCylinderHeight = Math.max(...cylinderData.map(d => d.height));
         }
         const visualCylinderHeightMax = maxCylinderHeight > 0 ? Math.ceil(maxCylinderHeight * 1.1) : 10;
-        
+
         chartContainer.setAttribute('scale', CYLINDER_CHART_CONTAINER_SCALE);
 
         const chartTitle = `${chart.graphname || 'Gráfico'} (${productName} - ${timeLabel})`;
@@ -584,7 +575,7 @@ function createChart(chartConfigData, originalIndex, valueType, timeType = 'year
                             `titlePosition: 2 11 0; heightMax: ${visualCylinderHeightMax}; ` +
                             `radiusMax: ${CONSTANT_CYLINDER_RADIUS}; x_axis: key; height: height; radius: radius; ` +
                             `data: ${JSON.stringify(cylinderData)}; showInfo: true; showInfoColor: #FFFFFF`;
-        
+
         chartContainer.setAttribute('babia-cyls', babiaConfig);
     }
     return chartContainer;
@@ -633,7 +624,7 @@ function renderAllCharts() {
     chartsData.forEach((chartConfig, originalIndex) => {
         if (!chartConfig.chart || !chartConfig.kpihistory) return;
         const kpiId = parseInt(chartConfig.chart.zAxis);
-        
+
         if (hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1') || hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2')) {
             const state = chartStates[originalIndex];
             if (!state) {
@@ -642,10 +633,10 @@ function renderAllCharts() {
             }
             const el = createChart(chartConfig, originalIndex, state.valueType, state.timeType, visibleChartIndex);
             if (el) root.appendChild(el);
-            
+
             const buttonsEl = createChartButtons(originalIndex, state, visibleChartIndex);
             if (buttonsEl) root.appendChild(buttonsEl);
-            
+
             visibleChartIndex++;
         }
     });
@@ -685,10 +676,6 @@ async function initializeApp(attemptLoadFromUrl = true) {
     const roomFromUrl = getRoomFromURL();
     let roomToLoad = null;
     let localIsCollapsed = false;
-
-    if (typeof ARHandler !== 'undefined' && ARHandler.resetARStateForAppReinit) {
-        ARHandler.resetARStateForAppReinit();
-    }
 
     if (attemptLoadFromUrl && roomFromUrl) {
         roomToLoad = roomFromUrl;
@@ -751,8 +738,7 @@ async function initializeApp(attemptLoadFromUrl = true) {
     isCollapsed = localIsCollapsed;
     updateRoomSelectorCollapsedState();
 
-    const arModeActive = (typeof ARHandler !== 'undefined' && ARHandler.isARModeActive) ? ARHandler.isARModeActive() : false;
-    if (sceneEl && !sceneEl.is('vr-mode') && !arModeActive) {
+    if (sceneEl && !sceneEl.is('vr-mode')) {
         showRoomSelector();
     }
 }
@@ -762,12 +748,6 @@ window.addEventListener('load', () => {
     const closeBtn = document.getElementById('closeErrorAndEnterBtn');
     if (closeBtn) {
         closeBtn.addEventListener('click', closeErrorAndEnterEnvironment);
-    }
-    
-    if (typeof ARHandler !== 'undefined' && ARHandler.init) {
-        ARHandler.init(hideRoomSelector, showRoomSelector);
-    } else {
-        console.error("ARHandler is not defined. AR features might not work.");
     }
 
     initializeApp(true);
