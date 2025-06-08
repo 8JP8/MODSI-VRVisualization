@@ -231,128 +231,74 @@ if (sceneEl) {
 }
 
 
+// --- START: NEW/MODIFIED CODE INTEGRATION ---
+
 // Chart and 3D Scene Configuration
-const POSITION_CONFIG = { startX: -10, baseY: 1.5, baseZ: 0, spacingX: 10, pieOffsetY: 3, bubbleOffsetY: 1, cylinderOffsetY: 0 };
+const POSITION_CONFIG = { startX: -10, baseY: 1.5, baseZ: 0, spacingX: 12, pieOffsetY: 3, bubbleOffsetY: 1, cylinderOffsetY: 0 };
 const TIME_TYPES = {
     'years': { label: 'Anos', next: 'months' },
     'months': { label: 'Meses', next: 'days' },
     'days': { label: 'Dias', next: 'byChange' },
-    'byChange': { label: 'Alteracao', next: 'years' }
+    'byChange': { label: 'Por Alteracao', next: 'years' }
 };
 const JSON_TIME_MAPPING = {
     'Year': 'years', 'Month': 'months', 'Day': 'days',
     'year': 'years', 'month': 'months', 'day': 'days',
     'years': 'years', 'months': 'months', 'days': 'days',
-    'byChange': 'change'
+    'change': 'byChange'
 };
+
 const CONSTANT_BUBBLE_RADIUS = 0.5;
-const BUBBLE_HEIGHT_VISUAL_SCALE_FACTOR = 20;
-const BUBBLE_CHART_VISUAL_HEIGHT_MAX = 8; // The fixed visual height for the chart's Y-axis.
+const BUBBLE_CHART_VISUAL_HEIGHT_MAX = 8;
 const BUBBLE_CHART_CONTAINER_SCALE = "0.9 0.9 0.9";
 
-// --- NEW: Cylinder Chart Constants ---
 const CONSTANT_CYLINDER_RADIUS = 0.80;
-const CYLINDER_HEIGHT_VISUAL_SCALE_FACTOR = 1;
 const CYLINDER_CHART_CONTAINER_SCALE = "1 1 1";
+const CYLINDER_VISUAL_HEIGHT_MAX = 10;
 
-
+// Global state variables
 let chartsData = [];
 let chartStates = {};
+let kpiMetadataCache = {};
+let allKpiHistory = [];
 
-function processKPIData(kpihistory, targetKPIId, timeAxisType, valueType = 'NewValue_1') {
-    const kpiData = kpihistory.filter(item => item.KPIId == targetKPIId);
+function safeParseFloat(valueStr) {
+    if (valueStr == null || String(valueStr).trim() === "") return 0;
+    const value = parseFloat(valueStr);
+    return isNaN(value) ? 0 : value;
+}
 
-    if (timeAxisType === 'byChange') {
-        const finalData = [];
-        // Sort by timestamp to ensure chronological order on the chart
-        const sortedKpiData = kpiData.sort((a, b) => new Date(a.ChangedAt) - new Date(b.ChangedAt));
-
-        sortedKpiData.forEach(item => {
-            const valueStr = valueType === 'NewValue_2' ? item.NewValue_2 : item.NewValue_1;
-            const value = parseFloat(valueStr);
-
-            if (valueStr != null && !isNaN(value)) {
-                const date = new Date(item.ChangedAt);
-                // Create a readable and unique key for each data point, including seconds
-                const timeKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
-                finalData.push({ key: timeKey, height: value });
-            }
-        });
-        return finalData;
+function getUnitForKPI(kpiId, kpiHistorySource) {
+    if (kpiMetadataCache[kpiId] && kpiMetadataCache[kpiId].unit) {
+        return kpiMetadataCache[kpiId].unit;
     }
-
-    // --- Existing aggregation logic for years, months, days ---
-    const dataByTimeKey = {};
-    kpiData.forEach(item => {
-        const date = new Date(item.ChangedAt);
-        let timeKey;
-        if (timeAxisType === 'years') timeKey = date.getFullYear().toString();
-        else if (timeAxisType === 'months') timeKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-        else if (timeAxisType === 'days') timeKey = date.toISOString().split('T')[0];
-        else timeKey = date.getFullYear().toString(); // Default to years
-        if (!dataByTimeKey[timeKey]) dataByTimeKey[timeKey] = [];
-        dataByTimeKey[timeKey].push({ ...item, parsedDate: date });
-    });
-
-    const finalData = [];
-    Object.keys(dataByTimeKey).sort().forEach(timeKey => {
-        const mostRecent = dataByTimeKey[timeKey].sort((a, b) => b.parsedDate - a.parsedDate)[0];
-        const valueStr = valueType === 'NewValue_2' ? mostRecent.NewValue_2 : mostRecent.NewValue_1;
-        const value = parseFloat(valueStr);
-        if (valueStr != null && !isNaN(value)) {
-            finalData.push({ key: timeKey, height: value });
-        }
-    });
-    return finalData;
+    const entry = kpiHistorySource.find(item => (item.KPIId !== undefined ? item.KPIId : item.KpiId) == kpiId && item.Unit);
+    const unit = entry ? entry.Unit : '';
+    if (!kpiMetadataCache[kpiId]) kpiMetadataCache[kpiId] = {};
+    kpiMetadataCache[kpiId].unit = unit;
+    return unit;
 }
 
-
-function processPieData(kpihistory, targetKPIId, timeAxisType, valueType = 'NewValue_1') {
-    return processKPIData(kpihistory, targetKPIId, timeAxisType, valueType).map(item => ({ key: item.key, size: item.height }));
+function parseGraphname(graphname) {
+    const parts = graphname.split(/\s+vs\s+/i);
+    if (parts.length === 2) {
+        return { kpi1Name: parts[0].trim(), kpi2Name: parts[1].trim() };
+    }
+    return { kpi1Name: graphname.trim(), kpi2Name: null };
 }
 
-function processBubbleData(kpihistory, targetKPIId, timeAxisType, constantRadius = CONSTANT_BUBBLE_RADIUS) {
-    const bubbleChartData = [];
-    // Process data for product 1, using original height values
-    const dataProduct1 = processKPIData(kpihistory, targetKPIId, timeAxisType, 'NewValue_1');
-    dataProduct1.forEach(item => {
-        if (item.height > 0) { // Only include bubbles with positive height
-            bubbleChartData.push({
-                key: item.key,
-                key2: "produto 1",
-                height: item.height, // Use original data value
-                radius: constantRadius
-            });
-        }
-    });
-    // Process data for product 2, using original height values
-    const dataProduct2 = processKPIData(kpihistory, targetKPIId, timeAxisType, 'NewValue_2');
-    dataProduct2.forEach(item => {
-         if (item.height > 0) { // Only include bubbles with positive height
-            bubbleChartData.push({
-                key: item.key,
-                key2: "produto 2",
-                height: item.height, // Use original data value
-                radius: constantRadius
-            });
-        }
-    });
-    return bubbleChartData;
-}
-
-function hasValidData(kpihistory, targetKPIId, valueType) {
-    const kpiData = kpihistory.filter(item => item.KPIId == targetKPIId);
+function hasValidData(kpiHistorySource, targetKPIId, valueType) {
+    const kpiData = kpiHistorySource.filter(item => (item.KPIId !== undefined ? item.KPIId : item.KpiId) == targetKPIId);
     return kpiData.some(item => {
-        const value = valueType === 'NewValue_2' ? item.NewValue_2 : item.NewValue_1;
-        const parsedValue = parseFloat(value);
-        return value != null && !isNaN(parsedValue) && parsedValue !== 0;
+        const value = (valueType === 'NewValue_2' ? item.NewValue_2 : item.NewValue_1);
+        return value != null && String(value).trim() !== "" && !isNaN(parseFloat(value));
     });
 }
 
-// --- UPDATED: Added babia-cyls case ---
-function calculatePosition(chartIndex, chartType = "babia-bars") {
-    const x = POSITION_CONFIG.startX + (chartIndex * POSITION_CONFIG.spacingX);
+function calculatePosition(visibleChartIndex, chartType = "babia-bars") {
+    const x = POSITION_CONFIG.startX + (visibleChartIndex * POSITION_CONFIG.spacingX);
     let y = POSITION_CONFIG.baseY;
+
     if (chartType === "babia-pie") y += POSITION_CONFIG.pieOffsetY;
     else if (chartType === "babia-bubbles") y += POSITION_CONFIG.bubbleOffsetY;
     else if (chartType === "babia-cyls") y += POSITION_CONFIG.cylinderOffsetY;
@@ -360,78 +306,107 @@ function calculatePosition(chartIndex, chartType = "babia-bars") {
     return `${x} ${y} ${POSITION_CONFIG.baseZ}`;
 }
 
+function toggleChartValue(originalIndex) {
+    if (!chartStates[originalIndex]) return;
+    const chartConfig = chartsData[originalIndex];
 
-function toggleChartValue(chartIndex) {
-    if (!chartStates[chartIndex]) return;
-    const chartConfig = chartsData[chartIndex];
-    // Don't toggle for bubble charts as they show both products
-    if (chartConfig && (chartConfig.chart.chartType === "babia-bubbles")) {
+    let chartIsByProduct = chartConfig.kpiReferences.some(ref => {
+        const kpiEntry = allKpiHistory.find(item => (item.KPIId !== undefined ? item.KPIId : item.KpiId) === ref.id);
+        return kpiEntry && kpiEntry.ByProduct === true;
+    });
+
+    if (chartIsByProduct || chartConfig.chart.chartType === "babia-bubbles") {
+        chartStates[originalIndex].valueType = chartStates[originalIndex].valueType === 'NewValue_1' ? 'NewValue_2' : 'NewValue_1';
+        renderSingleChart(originalIndex);
+    } else {
+        console.log(`Chart ${originalIndex} (${chartConfig.chart.graphname}) is not ByProduct. Value toggle ineffective.`);
+    }
+}
+
+function toggleChartTimeType(originalIndex) {
+    if (!chartStates[originalIndex] || !TIME_TYPES[chartStates[originalIndex].timeAggregationMode]) return;
+
+    const currentState = chartStates[originalIndex];
+    currentState.timeAggregationMode = TIME_TYPES[currentState.timeAggregationMode].next;
+
+    const chartConfig = chartsData[originalIndex];
+    const timePointsForNewMode = chartConfig.availableTimePointsByMode[currentState.timeAggregationMode] || [];
+    currentState.currentTimePointIndex = Math.max(0, timePointsForNewMode.length - 1);
+
+    renderSingleChart(originalIndex);
+}
+
+function navigateTime(originalIndex, direction) {
+    const state = chartStates[originalIndex];
+    const chartConfig = chartsData[originalIndex];
+    if (!state || !chartConfig) return;
+
+    const timePoints = chartConfig.availableTimePointsByMode[state.timeAggregationMode];
+    if (!timePoints || timePoints.length === 0) return;
+
+    let newIndex = state.currentTimePointIndex;
+    if (direction === 'prev') {
+        newIndex = Math.max(0, state.currentTimePointIndex - 1);
+    } else if (direction === 'next') {
+        newIndex = Math.min(timePoints.length - 1, state.currentTimePointIndex + 1);
+    }
+
+    if (newIndex !== state.currentTimePointIndex) {
+        state.currentTimePointIndex = newIndex;
+        renderSingleChart(originalIndex);
+    }
+}
+
+function renderSingleChart(originalIndex) {
+    const chartConfig = chartsData[originalIndex];
+    const state = chartStates[originalIndex];
+    if (!chartConfig || !state || !root) {
+        console.warn("Render single: Missing config, state, or root for index", originalIndex);
         return;
     }
-    chartStates[chartIndex].valueType = chartStates[chartIndex].valueType === 'NewValue_1' ? 'NewValue_2' : 'NewValue_1';
-    renderSingleChart(chartIndex);
-}
 
-function toggleChartTimeType(chartIndex) {
-    if (!chartStates[chartIndex] || !TIME_TYPES[chartStates[chartIndex].timeType]) return;
-    chartStates[chartIndex].timeType = TIME_TYPES[chartStates[chartIndex].timeType].next;
-    renderSingleChart(chartIndex);
-}
-
-// --- UPDATED: Component removal logic now includes babia-cyls ---
-function renderSingleChart(chartIndex) {
-    const chartConfig = chartsData[chartIndex];
-    const state = chartStates[chartIndex];
-    if (!chartConfig || !state || !root) return;
-
-    const existingChart = root.querySelector(`[data-chart-index="${chartIndex}"]`);
-    const existingButtons = root.querySelector(`[data-buttons-index="${chartIndex}"]`);
-
-    if (existingChart) {
-        let babiaComponent = null;
-        const chartType = chartConfig.chart.chartType;
-        if ((chartType === "babia-pie") && existingChart.components['babia-pie']) {
-            babiaComponent = 'babia-pie';
-        } else if ((chartType === "babia-bubbles") && existingChart.components['babia-bubbles']) {
-            babiaComponent = 'babia-bubbles';
-        } else if ((chartType === "babia-cyls") && existingChart.components['babia-cyls']) {
-            babiaComponent = 'babia-cyls';
-        }
-
-
-        if (babiaComponent) {
-            existingChart.removeAttribute(babiaComponent); // Important for re-rendering complex components
-        }
-
-        setTimeout(() => {
-            if (existingChart.parentNode) existingChart.parentNode.removeChild(existingChart);
-            if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
-
-            let visibleChartIndex = 0;
-            for(let i=0; i < chartIndex; i++){
-                if(chartsData[i] && chartStates[i] && (hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_1') || hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_2'))){
-                    visibleChartIndex++;
+    let currentVisibleIndex = 0;
+    for (let i = 0; i < originalIndex; i++) {
+        const prevChartConfig = chartsData[i];
+        if (prevChartConfig && prevChartConfig.chart && prevChartConfig.kpiReferences) {
+            let hasAnyPrevData = false;
+            for (const ref of prevChartConfig.kpiReferences) {
+                if (hasValidData(allKpiHistory, ref.id, 'NewValue_1') || hasValidData(allKpiHistory, ref.id, 'NewValue_2')) {
+                    hasAnyPrevData = true;
+                    break;
                 }
             }
+            if (hasAnyPrevData) {
+                currentVisibleIndex++;
+            }
+        }
+    }
 
-            const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType, visibleChartIndex);
-            if (chartEl) root.appendChild(chartEl);
-            const buttonsEl = createChartButtons(chartIndex, state, visibleChartIndex);
-            if (buttonsEl) root.appendChild(buttonsEl);
+    const existingChartEntity = root.querySelector(`a-entity[data-chart-index="${originalIndex}"]`);
+    const existingButtonsEntity = root.querySelector(`a-entity[data-buttons-index="${originalIndex}"]`);
+
+    if (existingChartEntity) {
+        const chartTypeAttr = chartConfig.chart.chartType;
+        if (existingChartEntity.components[chartTypeAttr]) {
+            try {
+                existingChartEntity.removeAttribute(chartTypeAttr);
+            } catch (e) { console.warn(`Error removing ${chartTypeAttr}:`, e); }
+        }
+        setTimeout(() => {
+            if (existingChartEntity.parentNode) existingChartEntity.parentNode.removeChild(existingChartEntity);
+            if (existingButtonsEntity && existingButtonsEntity.parentNode) existingButtonsEntity.parentNode.removeChild(existingButtonsEntity);
+
+            const newChartEl = createChart(chartConfig, originalIndex, state.valueType, state.timeAggregationMode, currentVisibleIndex);
+            if (newChartEl) root.appendChild(newChartEl);
+            const newButtonsEl = createChartButtons(originalIndex, state, currentVisibleIndex);
+            if (newButtonsEl) root.appendChild(newButtonsEl);
         }, 50);
     } else {
-         if (existingButtons && existingButtons.parentNode) existingButtons.parentNode.removeChild(existingButtons);
-
-         let visibleChartIndex = 0;
-         for(let i=0; i < chartIndex; i++){
-             if(chartsData[i] && chartStates[i] && (hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_1') || hasValidData(chartsData[i].kpihistory, parseInt(chartsData[i].chart.zAxis), 'NewValue_2'))){
-                 visibleChartIndex++;
-             }
-         }
-         const chartEl = createChart(chartConfig, chartIndex, state.valueType, state.timeType, visibleChartIndex);
-         if (chartEl) root.appendChild(chartEl);
-         const buttonsEl = createChartButtons(chartIndex, state, visibleChartIndex);
-         if (buttonsEl) root.appendChild(buttonsEl);
+        if (existingButtonsEntity && existingButtonsEntity.parentNode) existingButtonsEntity.parentNode.removeChild(existingButtonsEntity);
+        const newChartEl = createChart(chartConfig, originalIndex, state.valueType, state.timeAggregationMode, currentVisibleIndex);
+        if (newChartEl) root.appendChild(newChartEl);
+        const newButtonsEl = createChartButtons(originalIndex, state, currentVisibleIndex);
+        if (newButtonsEl) root.appendChild(newButtonsEl);
     }
 }
 
@@ -442,202 +417,429 @@ function createChartButtons(originalIndex, state, visibleIndex) {
     const chartType = chartConfig.chart.chartType;
     const posString = calculatePosition(visibleIndex, chartType);
     let [x, y, z] = posString.split(' ').map(parseFloat);
-    //button container offsets
-    if (chartType == "babia-pie") { y -= 3; }
-    if (chartType == "babia-bubbles") { y -= 2; }
 
-    const kpiId = parseInt(chartConfig.chart.zAxis);
-    const hasValue1 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1');
-    const hasValue2 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2');
+    if (chartType === "babia-pie") { y = POSITION_CONFIG.baseY + POSITION_CONFIG.pieOffsetY; }
+    else if (chartType === "babia-bubbles") { y = POSITION_CONFIG.baseY + POSITION_CONFIG.bubbleOffsetY; }
+    else { y = POSITION_CONFIG.baseY; }
 
     const buttonsContainer = document.createElement('a-entity');
-    buttonsContainer.setAttribute('position', `${x - 7} ${parseFloat(y) + 6} ${z}`); // Position to the LEFT of the chart
+    buttonsContainer.setAttribute('position', `${x - 4} ${y + 3} ${z}`);
     buttonsContainer.setAttribute('data-buttons-index', originalIndex);
     let buttonVerticalOffset = 0;
 
-    // Time type toggle button (Anos / Meses / Dias / By change) - Placed ON TOP
-    const timeButton = document.createElement('a-entity');
-    timeButton.setAttribute('geometry', 'primitive: box; width: 2.5; height: 0.8; depth: 0.1');
-    timeButton.setAttribute('material', 'color: #2196F3');
-    timeButton.setAttribute('position', `3 ${buttonVerticalOffset} 0`);
-    const timeText = document.createElement('a-text');
-    timeText.setAttribute('value', TIME_TYPES[state.timeType] ? TIME_TYPES[state.timeType].label : 'Tempo');
-    timeText.setAttribute('position', '0 0 0.06');
-    timeText.setAttribute('align', 'center');
-    timeText.setAttribute('color', 'white');
-    timeText.setAttribute('width', '4');
-    timeButton.appendChild(timeText);
-    timeButton.setAttribute('class', 'clickable');
-    timeButton.addEventListener('click', (event) => {
+    const timeAggButton = document.createElement('a-entity');
+    timeAggButton.setAttribute('geometry', 'primitive: box; width: 2.8; height: 0.6; depth: 0.1');
+    timeAggButton.setAttribute('material', 'color: #2196F3');
+    timeAggButton.setAttribute('position', `0 ${buttonVerticalOffset} 0`);
+    const timeAggText = document.createElement('a-text');
+    timeAggText.setAttribute('value', TIME_TYPES[state.timeAggregationMode] ? TIME_TYPES[state.timeAggregationMode].label : 'Agregação');
+    timeAggText.setAttribute('position', '0 0 0.06'); timeAggText.setAttribute('align', 'center'); timeAggText.setAttribute('color', 'white'); timeAggText.setAttribute('width', '3.5');
+    timeAggButton.appendChild(timeAggText);
+    timeAggButton.setAttribute('class', 'clickable');
+    timeAggButton.addEventListener('click', (event) => {
         event.stopPropagation();
-        setTimeout(() => toggleChartTimeType(originalIndex), 100);
+        toggleChartTimeType(originalIndex);
     });
-    buttonsContainer.appendChild(timeButton);
-    buttonVerticalOffset -= 1.2; // Space for the next button below
+    buttonsContainer.appendChild(timeAggButton);
+    buttonVerticalOffset -= 0.8;
 
-    // Value toggle button (Produto 1 / Produto 2) - Placed BELOW time button
-    // Only show if it's NOT a bubble chart and both products have data
-    if (chartType !== 'babia-bubbles' && hasValue1 && hasValue2) {
+    let showProductToggleButton = false;
+    let kpisMarkedByProductAndHaveData = false;
+    if (chartConfig.kpiReferences.length > 0) {
+        const isAnyKpiByProduct = chartConfig.kpiReferences.some(ref => {
+            const kpiEntry = allKpiHistory.find(item => (item.KPIId !== undefined ? item.KPIId : item.KpiId) === ref.id);
+            return kpiEntry && kpiEntry.ByProduct === true;
+        });
+
+        if (isAnyKpiByProduct) {
+            for (const ref of chartConfig.kpiReferences) {
+                const kpiEntryForRef = allKpiHistory.find(item => (item.KPIId !== undefined ? item.KPIId : item.KpiId) === ref.id);
+                if (kpiEntryForRef && kpiEntryForRef.ByProduct === true) {
+                    if (hasValidData(allKpiHistory, ref.id, 'NewValue_1') && hasValidData(allKpiHistory, ref.id, 'NewValue_2')) {
+                        kpisMarkedByProductAndHaveData = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    showProductToggleButton = kpisMarkedByProductAndHaveData;
+
+    if (showProductToggleButton) {
         const valueButton = document.createElement('a-entity');
-        valueButton.setAttribute('geometry', 'primitive: box; width: 2.5; height: 0.8; depth: 0.1');
+        valueButton.setAttribute('geometry', 'primitive: box; width: 2.8; height: 0.6; depth: 0.1');
         valueButton.setAttribute('material', `color: ${state.valueType === 'NewValue_1' ? '#4CAF50' : '#FF9800'}`);
-        valueButton.setAttribute('position', `3 ${buttonVerticalOffset} 0`);
+        valueButton.setAttribute('position', `0 ${buttonVerticalOffset} 0`);
         const valueText = document.createElement('a-text');
         valueText.setAttribute('value', state.valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2');
-        valueText.setAttribute('position', '0 0 0.1');
-        valueText.setAttribute('align', 'center');
-        valueText.setAttribute('color', 'white');
-        valueText.setAttribute('width', '4');
+        valueText.setAttribute('position', '0 0 0.06'); valueText.setAttribute('align', 'center'); valueText.setAttribute('color', 'white'); valueText.setAttribute('width', '3.5');
         valueButton.appendChild(valueText);
         valueButton.setAttribute('class', 'clickable');
         valueButton.addEventListener('click', (event) => {
             event.stopPropagation();
-            setTimeout(() => toggleChartValue(originalIndex), 100);
+            toggleChartValue(originalIndex);
         });
         buttonsContainer.appendChild(valueButton);
+        buttonVerticalOffset -= 0.8;
     }
+
+    const timePoints = chartConfig.availableTimePointsByMode[state.timeAggregationMode];
+    const atStart = !timePoints || timePoints.length === 0 || state.currentTimePointIndex <= 0;
+    const atEnd = !timePoints || timePoints.length === 0 || state.currentTimePointIndex >= timePoints.length - 1;
+
+    const prevButton = document.createElement('a-entity');
+    prevButton.setAttribute('geometry', 'primitive: box; width: 1.3; height: 0.6; depth: 0.1');
+    prevButton.setAttribute('material', `color: ${atStart ? '#9E9E9E' : '#607D8B'}`);
+    prevButton.setAttribute('position', `-0.75 ${buttonVerticalOffset} 0`);
+    const prevText = document.createElement('a-text');
+    prevText.setAttribute('value', '<');
+    prevText.setAttribute('position', '0 0 0.06'); prevText.setAttribute('align', 'center'); prevText.setAttribute('color', 'white'); prevText.setAttribute('width', '3');
+    prevButton.appendChild(prevText);
+    if (!atStart) {
+        prevButton.setAttribute('class', 'clickable');
+        prevButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            navigateTime(originalIndex, 'prev');
+        });
+    }
+    buttonsContainer.appendChild(prevButton);
+
+    const nextButton = document.createElement('a-entity');
+    nextButton.setAttribute('geometry', 'primitive: box; width: 1.3; height: 0.6; depth: 0.1');
+    nextButton.setAttribute('material', `color: ${atEnd ? '#9E9E9E' : '#607D8B'}`);
+    nextButton.setAttribute('position', `0.75 ${buttonVerticalOffset} 0`);
+    const nextText = document.createElement('a-text');
+    nextText.setAttribute('value', '>');
+    nextText.setAttribute('position', '0 0 0.06'); nextText.setAttribute('align', 'center'); nextText.setAttribute('color', 'white'); nextText.setAttribute('width', '3');
+    nextButton.appendChild(nextText);
+    if (!atEnd) {
+        nextButton.setAttribute('class', 'clickable');
+        nextButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            navigateTime(originalIndex, 'next');
+        });
+    }
+    buttonsContainer.appendChild(nextButton);
+
     return buttonsContainer;
 }
 
-// --- UPDATED: Added babia-cyls chart creation logic ---
-function createChart(chartConfigData, originalIndex, valueType, timeType = 'years', visibleIndex) {
-    const { kpihistory, chart } = chartConfigData;
-    if (!kpihistory || !chart) return null;
+function createChart(chartConfigData, originalIndex, valueType, timeAggregationMode, visibleIndex) {
+    const { chart } = chartConfigData;
+    if (!chart) return null;
 
-    const kpiId = parseInt(chart.zAxis);
     const chartContainer = document.createElement('a-entity');
-
     chartContainer.setAttribute('position', calculatePosition(visibleIndex, chart.chartType));
     chartContainer.setAttribute('data-chart-index', originalIndex);
 
-    const palette = valueType === 'NewValue_1' ? 'commerce' : 'ubuntu';
-    const productName = valueType === 'NewValue_1' ? 'Produto 1' : 'Produto 2';
-    const timeLabel = TIME_TYPES[timeType] ? TIME_TYPES[timeType].label : 'Tempo';
+    const chartDataForBabia = getChartDataForCurrentState(originalIndex);
+    const state = chartStates[originalIndex];
+    const timePoints = chartConfigData.availableTimePointsByMode[state.timeAggregationMode];
+    
+    let currentTimeDisplayLabel = state.timeAggregationMode;
+    if (timePoints && timePoints.length > 0 && state.currentTimePointIndex < timePoints.length) {
+        const rawTimeLabel = timePoints[state.currentTimePointIndex];
+        currentTimeDisplayLabel = (state.timeAggregationMode === 'byChange') ? rawTimeLabel.substring(0, 16) : rawTimeLabel;
+    }
+
+    const mainTitle = chart.graphname || 'Gráfico';
+    let subTitle = `(${state.valueType === 'NewValue_1' ? 'P1' : 'P2'} - ${currentTimeDisplayLabel})`;
+    
+    if (chart.chartType === 'babia-bubbles') {
+         subTitle = `(${state.valueType === 'NewValue_1' ? 'P1' : 'P2'})`;
+         if(timeAggregationMode !== 'byChange'){
+            subTitle += ` - ${currentTimeDisplayLabel}`;
+         }
+    }
+
+    const babiaCommonConfig = `legend: true; axis: true; tooltip: true; animation: false; showInfo: true; showInfoColor: #FFFFFF; titleColor: #FFFFFF; titleFont: #optimerBoldFont;`;
+    let babiaSpecificConfig = "";
+    let titleY = 5, titleX = 0;
 
     if (chart.chartType === "babia-bars") {
-        const chartData = processKPIData(kpihistory, kpiId, timeType, valueType);
-        const chartTitle = `${chart.graphname || 'Gráfico'} (${productName} - ${timeLabel})`;
-        const babiaConfig = `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: false; title: ${chartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 2 11 0; heightMax: 800; x_axis: key; height: height; data: ${JSON.stringify(chartData)}; showInfo: true; showInfoColor: #FFFFFF`;
-        chartContainer.setAttribute('babia-bars', babiaConfig);
+        titleY = 12;
+        const title = `${mainTitle} ${subTitle}`;
+        babiaSpecificConfig = `palette: commerce; title: ${title}; titlePosition: ${titleX} ${titleY} 0; heightMax: 10; x_axis: key; height: height; data: ${JSON.stringify(chartDataForBabia)}`;
+        chartContainer.setAttribute('babia-bars', `${babiaCommonConfig} ${babiaSpecificConfig}`);
+    } else if (chart.chartType === "babia-pie") {
+        const title = `${mainTitle} ${subTitle}`;
+        const titleEl = document.createElement('a-text');
+        titleEl.setAttribute('value', title);
+        titleEl.setAttribute('position', `0 ${POSITION_CONFIG.pieOffsetY + 2} 0`);
+        titleEl.setAttribute('align', 'center'); titleEl.setAttribute('color', '#FFFFFF'); titleEl.setAttribute('width', '6');
+        chartContainer.appendChild(titleEl);
+
+        const pieEl = document.createElement('a-entity');
+        babiaSpecificConfig = `palette: commerce; key: key; size: size; data: ${JSON.stringify(chartDataForBabia)}`;
+        const pieCommon = `legend: true; tooltip: true; animation: false; showInfo: true; showInfoColor: #FFFFFF;`;
+        pieEl.setAttribute('babia-pie', `${pieCommon} ${babiaSpecificConfig}`);
+        pieEl.setAttribute('rotation', '90 0 0');
+        pieEl.setAttribute('scale', '1.5 1.5 1.5');
+        chartContainer.appendChild(pieEl);
     } else if (chart.chartType === "babia-bubbles") {
         chartContainer.setAttribute('scale', BUBBLE_CHART_CONTAINER_SCALE);
-        let bubbleData = processBubbleData(kpihistory, kpiId, timeType, CONSTANT_BUBBLE_RADIUS);
+        const title = `${mainTitle} ${subTitle}`;
+        
+        const filteredBubbleData = chartDataForBabia.filter(d => d.height > 0);
+        if (filteredBubbleData.length === 0) {
+            filteredBubbleData.push({ key: 'Sem dados', key2: '', height: 0, radius: 0, originalHeight: 0 });
+        }
+        const scaleYFactor = parseFloat(BUBBLE_CHART_CONTAINER_SCALE.split(" ")[1] || 1);
+        titleY = (BUBBLE_CHART_VISUAL_HEIGHT_MAX / scaleYFactor) + (2 / scaleYFactor);
 
-        if (bubbleData.length === 0) {
-            bubbleData.push({ key: 'Sem dados positivos', key2: '', height: 0, radius: 0 });
-        }
-        const titleYPosition = (BUBBLE_CHART_VISUAL_HEIGHT_MAX + 2) / parseFloat(BUBBLE_CHART_CONTAINER_SCALE.split(" ")[1]);
-        const bubbleChartTitle = `${chart.graphname || 'Gráfico'} (${timeLabel})`;
-        const babiaConfig = `x_axis: key; z_axis: key2; height: height; radius: radius; legend: true; palette: foxy; animation: true; tooltip: true; title: ${bubbleChartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; titlePosition: 0 ${titleYPosition} 0; heightMax: ${BUBBLE_CHART_VISUAL_HEIGHT_MAX}; radiusMax: ${CONSTANT_BUBBLE_RADIUS}; data: ${JSON.stringify(bubbleData)}; showInfo: true; showInfoColor: #FFFFFF`;
-        chartContainer.setAttribute('babia-bubbles', babiaConfig);
-    } else if (chart.chartType === "babia-pie") {
-        let pieData = processPieData(kpihistory, kpiId, timeType, valueType);
-        if (pieData.length === 0 || pieData.every(item => item.size === 0)) {
-            pieData = [{ key: 'Sem Dados', size: 1 }];
-        }
-        const chartTitle = `${chart.graphname || 'Gráfico'} (${productName} - ${timeLabel})`;
-        const titleEl = document.createElement('a-text');
-        titleEl.setAttribute('value', chartTitle);
-        titleEl.setAttribute('position', '1 6 0');
-        titleEl.setAttribute('align', 'center');
-        titleEl.setAttribute('color', '#FFFFFF');
-        titleEl.setAttribute('width', '8');
-        chartContainer.appendChild(titleEl);
-        const pieEl = document.createElement('a-entity');
-        const pieConfig = `legend: true; palette: ${palette}; animation: false; key: key; size: size; data: ${JSON.stringify(pieData)}; showInfo: true; showInfoColor: #FFFFFF`;
-        pieEl.setAttribute('babia-pie', pieConfig);
-        pieEl.setAttribute('rotation', '90 0 0');
-        pieEl.setAttribute('scale', '1.8 1.8 1.8');
-        chartContainer.appendChild(pieEl);
+        babiaSpecificConfig = `x_axis: key; z_axis: key2; height: height; radius: radius; palette: foxy; title: ${title}; titlePosition: ${titleX} ${titleY} 0; heightMax: ${BUBBLE_CHART_VISUAL_HEIGHT_MAX}; radiusMax: ${CONSTANT_BUBBLE_RADIUS}; data: ${JSON.stringify(filteredBubbleData)}`;
+        chartContainer.setAttribute('babia-bubbles', `${babiaCommonConfig} ${babiaSpecificConfig}`);
     } else if (chart.chartType === "babia-cyls") {
-        let cylinderRawData = processKPIData(kpihistory, kpiId, timeType, valueType);
-        const cylinderData = cylinderRawData.map(item => ({
-            key: item.key,
-            height: item.height / CYLINDER_HEIGHT_VISUAL_SCALE_FACTOR,
-            radius: CONSTANT_CYLINDER_RADIUS
-        }));
-
-        if (cylinderData.length === 0) {
-             cylinderData.push({ key: 'Sem Dados', height: 0.1, radius: CONSTANT_CYLINDER_RADIUS });
-        }
-
-        let maxCylinderHeight = 0;
-        if(cylinderData.length > 0) {
-            maxCylinderHeight = Math.max(...cylinderData.map(d => d.height));
-        }
-        const visualCylinderHeightMax = maxCylinderHeight > 0 ? Math.ceil(maxCylinderHeight * 1.1) : 10;
-
         chartContainer.setAttribute('scale', CYLINDER_CHART_CONTAINER_SCALE);
+        const title = `${mainTitle} ${subTitle}`;
+        
+        const scaleYFactorCyl = parseFloat(CYLINDER_CHART_CONTAINER_SCALE.split(" ")[1] || 1);
+        titleY = (CYLINDER_VISUAL_HEIGHT_MAX / scaleYFactorCyl) + (2 / scaleYFactorCyl) ;
 
-        const chartTitle = `${chart.graphname || 'Gráfico'} (${productName} - ${timeLabel})`;
-        const babiaConfig = `legend: true; axis: true; palette: ${palette}; tooltip: true; animation: false; ` +
-                            `title: ${chartTitle}; titleColor: #FFFFFF; titleFont: #optimerBoldFont; ` +
-                            `titlePosition: 2 11 0; heightMax: ${visualCylinderHeightMax}; ` +
-                            `radiusMax: ${CONSTANT_CYLINDER_RADIUS}; x_axis: key; height: height; radius: radius; ` +
-                            `data: ${JSON.stringify(cylinderData)}; showInfo: true; showInfoColor: #FFFFFF`;
-
-        chartContainer.setAttribute('babia-cyls', babiaConfig);
+        babiaSpecificConfig = `palette: ubuntu; title: ${title}; titlePosition: ${titleX} ${titleY} 0; heightMax: ${CYLINDER_VISUAL_HEIGHT_MAX}; radiusMax: ${CONSTANT_CYLINDER_RADIUS}; x_axis: key; height: height; radius: radius; data: ${JSON.stringify(chartDataForBabia)}`;
+        chartContainer.setAttribute('babia-cyls', `${babiaCommonConfig} ${babiaSpecificConfig}`);
     }
     return chartContainer;
 }
 
+function getLatestValueForKPI(kpiId, productValueType, targetDateStr, timeAggregationMode, kpiHistorySource) {
+    const historyForKPI = kpiHistorySource.filter(item => (item.KPIId !== undefined ? item.KPIId : item.KpiId) === kpiId);
+    if (historyForKPI.length === 0) return 0;
+
+    let relevantEntries = [];
+    
+    if (timeAggregationMode === 'byChange') {
+        const exactMatchEntry = historyForKPI.find(e => e.ChangedAt === targetDateStr);
+        if (exactMatchEntry) {
+            return safeParseFloat(exactMatchEntry[productValueType]);
+        }
+        relevantEntries = historyForKPI
+            .filter(e => new Date(e.ChangedAt) <= new Date(targetDateStr))
+            .sort((a, b) => new Date(b.ChangedAt) - new Date(a.ChangedAt));
+    } else {
+        relevantEntries = historyForKPI
+            .filter(e => e.ChangedAt.substring(0, targetDateStr.length) === targetDateStr)
+            .sort((a, b) => new Date(b.ChangedAt) - new Date(a.ChangedAt));
+        
+        if(relevantEntries.length === 0) {
+            const periodStartDate = new Date(targetDateStr);
+            relevantEntries = historyForKPI
+                .filter(e => new Date(e.ChangedAt) < periodStartDate)
+                .sort((a, b) => new Date(b.ChangedAt) - new Date(a.ChangedAt));
+        }
+    }
+    return relevantEntries.length > 0 ? safeParseFloat(relevantEntries[0][productValueType]) : 0;
+}
+
+function getChartDataForCurrentState(originalIndex) {
+    const chartConfigContainer = chartsData[originalIndex];
+    const state = chartStates[originalIndex];
+    if (!chartConfigContainer || !state) return [];
+
+    const { kpiReferences, availableTimePointsByMode, kpihistory, chart } = chartConfigContainer;
+    const { timeAggregationMode, currentTimePointIndex, valueType } = state;
+
+    const timePoints = availableTimePointsByMode[timeAggregationMode];
+    let currentTargetTimeStr = "";
+
+    if (!timePoints || timePoints.length === 0 || currentTimePointIndex < 0 || currentTimePointIndex >= timePoints.length) {
+        if (kpiReferences.length === 0) return [];
+        return kpiReferences.map(ref => ({
+            key: `${ref.name} (${ref.unit})`,
+            height: 0,
+            radius: chart.chartType === 'babia-cyls' ? CONSTANT_CYLINDER_RADIUS : undefined
+        }));
+    }
+    
+    currentTargetTimeStr = timePoints[currentTimePointIndex];
+    const processedData = [];
+
+    if (chart.chartType === 'babia-bubbles') {
+        kpiReferences.forEach(refKPI => {
+            const kpiId = refKPI.id;
+            const historyForThisKPIInChart = kpihistory.filter(item => (item.KPIId !== undefined ? item.KPIId : item.KpiId) === kpiId);
+
+            let entriesForCurrentTimePoint = [];
+            if (timeAggregationMode === 'byChange') {
+                entriesForCurrentTimePoint = historyForThisKPIInChart.filter(e => e.ChangedAt === currentTargetTimeStr);
+            } else {
+                entriesForCurrentTimePoint = historyForThisKPIInChart.filter(e => e.ChangedAt.startsWith(currentTargetTimeStr));
+            }
+
+            entriesForCurrentTimePoint.forEach(entry => {
+                const val = safeParseFloat(entry[valueType]);
+                let timeKeyForBubbleDisplay = currentTargetTimeStr;
+                if (timeAggregationMode === 'byChange') {
+                    timeKeyForBubbleDisplay = entry.ChangedAt.substring(0, 16);
+                }
+
+                processedData.push({
+                    key: timeKeyForBubbleDisplay,
+                    key2: `${refKPI.name} (${refKPI.unit})`,
+                    height: val,
+                    originalHeight: val,
+                    radius: CONSTANT_BUBBLE_RADIUS
+                });
+            });
+        });
+    } else {
+        kpiReferences.forEach(refKPI => {
+            const kpiId = refKPI.id;
+            const value = getLatestValueForKPI(kpiId, valueType, currentTargetTimeStr, timeAggregationMode, kpihistory);
+            const dataPoint = { key: `${refKPI.name} (${refKPI.unit})` };
+            if (chart.chartType === 'babia-pie') {
+                dataPoint.size = Math.max(0, value);
+            } else {
+                dataPoint.height = value;
+            }
+            if (chart.chartType === 'babia-cyls') {
+                dataPoint.radius = CONSTANT_CYLINDER_RADIUS;
+            }
+            processedData.push(dataPoint);
+        });
+    }
+    return processedData;
+}
 
 function clearCharts() {
     if (!root) return;
     while (root.firstChild) {
-        root.removeChild(root.firstChild);
+        const child = root.firstChild;
+        const chartIndexStr = child.dataset.chartIndex;
+        if (chartIndexStr !== undefined) {
+            const chartIndex = parseInt(chartIndexStr);
+            if (chartsData && chartsData[chartIndex] && chartsData[chartIndex].chart && child.components[chartsData[chartIndex].chart.chartType]) {
+                try {
+                    child.removeAttribute(chartsData[chartIndex].chart.chartType);
+                } catch (e) { console.warn("Error removing component during clear:", e); }
+            }
+        }
+        root.removeChild(child);
     }
     chartsData = [];
     chartStates = {};
+    kpiMetadataCache = {};
+    allKpiHistory = [];
 }
 
-function getDefaultTimeType(chart) {
-    const timeUnit = chart.xAxis || chart.timeUnit || chart.xAxisUnit || chart.temporalUnit;
-    return JSON_TIME_MAPPING[timeUnit] || 'years';
-}
+function initializeAllChartDataAndStates(rawChartsConfig, rawKpiHistory) {
+    allKpiHistory = rawKpiHistory;
+    kpiMetadataCache = {};
 
-function initializeChartStates() {
-    chartStates = {};
-    chartsData.forEach((chartConfig, index) => {
-        if (!chartConfig.chart) return;
-        const kpiId = parseInt(chartConfig.chart.zAxis);
-        const hasValue1 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1');
-        const hasValue2 = hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2');
-        let defaultValueType = 'NewValue_1';
-        if (!hasValue1 && hasValue2) {
-            defaultValueType = 'NewValue_2';
+    const newChartsData = [];
+    const newChartStates = {};
+
+    rawChartsConfig.forEach((chartInfo, originalIndex) => {
+        const kpiRefs = [];
+        const { kpi1Name, kpi2Name } = parseGraphname(chartInfo.graphname);
+
+        if (chartInfo.zAxis) {
+            const kpiId1 = parseInt(chartInfo.zAxis);
+            kpiRefs.push({
+                id: kpiId1, name: kpi1Name || `KPI ${kpiId1}`,
+                unit: getUnitForKPI(kpiId1, allKpiHistory), axisBinding: 'zAxis'
+            });
         }
-        chartStates[index] = {
-            valueType: defaultValueType,
-            timeType: getDefaultTimeType(chartConfig.chart)
+        if (chartInfo.yAxis && kpi2Name) {
+            const kpiId2 = parseInt(chartInfo.yAxis);
+            kpiRefs.push({
+                id: kpiId2, name: kpi2Name || `KPI ${kpiId2}`,
+                unit: getUnitForKPI(kpiId2, allKpiHistory), axisBinding: 'yAxis'
+            });
+        }
+        
+        const kpiIdsForChart = kpiRefs.map(ref => ref.id);
+        const relevantKpiHistory = allKpiHistory.filter(entry => kpiIdsForChart.includes(entry.KPIId !== undefined ? entry.KPIId : entry.KpiId));
+
+        const availableTimePointsByMode = { years: [], months: [], days: [], byChange: [] };
+        const yearSet = new Set(), monthSet = new Set(), daySet = new Set(), changeSet = new Set();
+
+        relevantKpiHistory.forEach(entry => {
+            const date = new Date(entry.ChangedAt);
+            yearSet.add(date.getFullYear().toString());
+            monthSet.add(`${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`);
+            daySet.add(date.toISOString().split('T')[0]);
+            changeSet.add(entry.ChangedAt);
+        });
+
+        availableTimePointsByMode.years = Array.from(yearSet).sort((a, b) => new Date(a) - new Date(b));
+        availableTimePointsByMode.months = Array.from(monthSet).sort((a, b) => new Date(a) - new Date(b));
+        availableTimePointsByMode.days = Array.from(daySet).sort((a, b) => new Date(a) - new Date(b));
+        availableTimePointsByMode.byChange = Array.from(changeSet).sort((a, b) => new Date(a) - new Date(b));
+
+        newChartsData[originalIndex] = {
+            kpihistory: relevantKpiHistory, chart: chartInfo,
+            originalIndex: originalIndex, kpiReferences: kpiRefs,
+            availableTimePointsByMode: availableTimePointsByMode
+        };
+        
+        const initialTimeAggregationMode = JSON_TIME_MAPPING[chartInfo.xAxis || chartInfo.timeUnit] || 'years';
+        const timePointsForInitialMode = availableTimePointsByMode[initialTimeAggregationMode] || [];
+
+        newChartStates[originalIndex] = {
+            valueType: 'NewValue_1', timeAggregationMode: initialTimeAggregationMode,
+            currentTimePointIndex: Math.max(0, timePointsForInitialMode.length - 1),
+            kpiIds: kpiIdsForChart
         };
     });
+    chartsData = newChartsData;
+    chartStates = newChartStates;
 }
 
+
 function renderAllCharts() {
-    if (!root) return;
+    if (!root) {
+        console.error("A-Frame scene root for charts not found!");
+        return;
+    }
+    // Clear previous charts visually, but state is already initialized
     while (root.firstChild) {
         root.removeChild(root.firstChild);
     }
-
+    
     let visibleChartIndex = 0;
     chartsData.forEach((chartConfig, originalIndex) => {
-        if (!chartConfig.chart || !chartConfig.kpihistory) return;
-        const kpiId = parseInt(chartConfig.chart.zAxis);
+        if (!chartConfig.chart || !allKpiHistory || !chartConfig.kpiReferences) {
+             console.warn(`Skipping chart index ${originalIndex} due to missing config.`);
+             return;
+        }
 
-        if (hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_1') || hasValidData(chartConfig.kpihistory, kpiId, 'NewValue_2')) {
+        let chartHasAnyData = chartConfig.kpiReferences.some(ref => 
+            hasValidData(allKpiHistory, ref.id, 'NewValue_1') || hasValidData(allKpiHistory, ref.id, 'NewValue_2')
+        );
+
+        if (chartHasAnyData) {
             const state = chartStates[originalIndex];
             if (!state) {
-                console.warn(`State not found for chart index ${originalIndex}. Skipping.`);
+                console.warn(`State not found for chart index ${originalIndex}. Skipping render.`);
                 return;
             }
-            const el = createChart(chartConfig, originalIndex, state.valueType, state.timeType, visibleChartIndex);
-            if (el) root.appendChild(el);
 
+            let isByProductChart = chartConfig.kpiReferences.some(ref => {
+                const kpiEntry = allKpiHistory.find(item => (item.KPIId !== undefined ? item.KPIId : item.KpiId) === ref.id);
+                return kpiEntry && kpiEntry.ByProduct === true;
+            });
+
+            if (isByProductChart && chartConfig.kpiReferences.length > 0) {
+                const primaryKpiId = chartConfig.kpiReferences[0].id;
+                const currentProductHasData = hasValidData(allKpiHistory, primaryKpiId, state.valueType);
+                if (!currentProductHasData) {
+                    const otherValueType = state.valueType === 'NewValue_1' ? 'NewValue_2' : 'NewValue_1';
+                    if (hasValidData(allKpiHistory, primaryKpiId, otherValueType)) {
+                        state.valueType = otherValueType;
+                    }
+                }
+            }
+            
+            const el = createChart(chartConfig, originalIndex, state.valueType, state.timeAggregationMode, visibleChartIndex);
+            if (el) root.appendChild(el);
+            
             const buttonsEl = createChartButtons(originalIndex, state, visibleChartIndex);
             if (buttonsEl) root.appendChild(buttonsEl);
-
+            
             visibleChartIndex++;
+        } else {
+            console.warn(`Chart "${chartConfig.chart.graphname}" (Index ${originalIndex}) will not be rendered as it has no valid data.`);
         }
     });
 }
@@ -686,6 +888,7 @@ async function initializeApp(attemptLoadFromUrl = true) {
         syncRoomUI(currentRoom);
         showLoading(true, currentRoom);
         showError(false);
+        clearCharts(); // Clear everything before loading new data
 
         try {
             console.log(`Initializing application for room: ${currentRoom}...`);
@@ -699,19 +902,11 @@ async function initializeApp(attemptLoadFromUrl = true) {
                 throw new Error('Missing kpihistory or charts in API response config.');
             }
 
-            chartsData = [];
-            chartsFromConfig.forEach(chart => {
-                chartsData.push({
-                    kpihistory: kpihistoryFromConfig,
-                    chart: chart
-                });
-            });
-
-            if (chartsData.length === 0) {
+            if (chartsFromConfig.length === 0) {
                 console.warn('Nenhum gráfico encontrado nos dados para esta sala.');
-                clearCharts();
             } else {
-                initializeChartStates();
+                // *** NEW INITIALIZATION AND RENDERING FLOW ***
+                initializeAllChartDataAndStates(chartsFromConfig, kpihistoryFromConfig);
                 renderAllCharts();
             }
 
@@ -743,11 +938,17 @@ async function initializeApp(attemptLoadFromUrl = true) {
     }
 }
 
+// --- END: NEW/MODIFIED CODE INTEGRATION ---
+
 window.addEventListener('load', () => {
     console.log('Page loaded, starting application...');
     const closeBtn = document.getElementById('closeErrorAndEnterBtn');
     if (closeBtn) {
         closeBtn.addEventListener('click', closeErrorAndEnterEnvironment);
+    }
+    const retryBtn = document.getElementById('retryConnectionBtn');
+    if(retryBtn) {
+        retryBtn.addEventListener('click', retryConnection);
     }
 
     initializeApp(true);
