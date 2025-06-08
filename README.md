@@ -1,7 +1,7 @@
 # MODSI-VRVisualization
 VR Room Environment for visualization of company indicators data on 3D charts.
  
-Exemplo de Estrutura:
+Example Input Data Structure (JSON):
 ```
 [
     {
