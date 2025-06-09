@@ -465,6 +465,24 @@ function createChartButtons(originalIndex, state, visibleIndex) {
     return buttonsContainer;
 }
 
+// Adicione esta função ao seu ficheiro main.js
+
+function toggleChartTimeType(originalIndex) {
+    if (!chartStates[originalIndex] || !TIME_TYPES[chartStates[originalIndex].timeAggregationMode]) return;
+    
+    const currentState = chartStates[originalIndex];
+    // Apanha o próximo modo de agregação da constante TIME_TYPES
+    currentState.timeAggregationMode = TIME_TYPES[currentState.timeAggregationMode].next;
+    
+    // Atualiza o índice do tempo para o último ponto disponível no novo modo
+    const chartConfig = chartsData[originalIndex];
+    const timePointsForNewMode = chartConfig.availableTimePointsByMode[currentState.timeAggregationMode] || [];
+    currentState.currentTimePointIndex = Math.max(0, timePointsForNewMode.length - 1);
+
+    // Manda redesenhar o gráfico com o novo estado
+    renderSingleChart(originalIndex);
+}
+
 function createChart(chartConfigData, originalIndex, visibleIndex) {
     const { chart, isCorrelationChart } = chartConfigData; 
     if (!chart) return null;
