@@ -605,13 +605,42 @@ function initializeAllChartDataAndStates(rawChartsConfig, rawKpiHistory) {
     const newChartsData = [];
     const newChartStates = {};
 
-    rawChartsConfig.forEach((chartInfo, originalIndex) => { 
-        const isCorrelationChart = !!(chartInfo.zAxis && chartInfo.yAxis);
+        rawChartsConfig.forEach((chartInfo, originalIndex) => { 
         const { kpi1Name, kpi2Name } = parseGraphname(chartInfo.graphname);
         const kpiRefs = [];
-        if (chartInfo.zAxis) kpiRefs.push({ id: parseInt(chartInfo.zAxis), name: kpi1Name || `KPI ${chartInfo.zAxis}`, unit: getUnitForKPI(parseInt(chartInfo.zAxis)) });
-        if (isCorrelationChart) kpiRefs.push({ id: parseInt(chartInfo.yAxis), name: kpi2Name || `KPI ${chartInfo.yAxis}`, unit: getUnitForKPI(parseInt(chartInfo.yAxis)) });
-        if (kpiRefs.length === 0) return;
+
+        // Adiciona o KPI do zAxis se existir
+        if (chartInfo.zAxis) {
+            kpiRefs.push({ 
+                id: parseInt(chartInfo.zAxis), 
+                name: kpi1Name || `KPI ${chartInfo.zAxis}`, 
+                unit: getUnitForKPI(parseInt(chartInfo.zAxis)) 
+            });
+        }
+
+        // Adiciona o KPI do yAxis se existir
+        if (chartInfo.yAxis) {
+            // Se já houver um KPI (do zAxis), o nome deste será kpi2Name.
+            // Se for o único KPI, o nome será kpi1Name.
+            const yAxisKpiName = kpiRefs.length > 0 ? 
+                                 (kpi2Name || `KPI ${chartInfo.yAxis}`) : 
+                                 (kpi1Name || `KPI ${chartInfo.yAxis}`);
+            
+            kpiRefs.push({ 
+                id: parseInt(chartInfo.yAxis), 
+                name: yAxisKpiName, 
+                unit: getUnitForKPI(parseInt(chartInfo.yAxis))
+            });
+        }
+        
+        // Se, depois de verificar ambos os eixos, não encontrarmos nenhum KPI, ignoramos este gráfico.
+        if (kpiRefs.length === 0) {
+            console.warn(`Skipping chart "${chartInfo.graphname}" because no valid zAxis or yAxis KPI was found.`);
+            return; // O 'return' aqui funciona como 'continue' num forEach
+        }
+
+        // Um gráfico é de correlação/comparação se tiver mais de 1 KPI.
+        const isCorrelationChart = kpiRefs.length > 1;
         
         const kpiIdsForChart = kpiRefs.map(ref => ref.id);
         const relevantKpiHistory = allKpiHistory.filter(entry => kpiIdsForChart.includes(entry.KPIId ?? entry.KpiId));
@@ -630,14 +659,18 @@ function initializeAllChartDataAndStates(rawChartsConfig, rawKpiHistory) {
         }
 
         newChartsData[originalIndex] = {
-            kpihistory: relevantKpiHistory, chart: chartInfo, kpiReferences: kpiRefs,
-            isCorrelationChart: isCorrelationChart, availableTimePointsByMode: availableTimePointsByMode
+            kpihistory: relevantKpiHistory, 
+            chart: chartInfo, 
+            kpiReferences: kpiRefs,
+            isCorrelationChart: isCorrelationChart, // Usamos a nossa nova variável
+            availableTimePointsByMode: availableTimePointsByMode
         };
         
         const initialTimeMode = JSON_TIME_MAPPING[chartInfo.xAxis || chartInfo.timeUnit] || 'years';
         const timePoints = availableTimePointsByMode[initialTimeMode] || [];
         newChartStates[originalIndex] = {
-            valueType: 'NewValue_1', timeAggregationMode: initialTimeMode,
+            valueType: 'NewValue_1', 
+            timeAggregationMode: initialTimeMode,
             currentTimePointIndex: Math.max(0, timePoints.length - 1),
         };
     });
