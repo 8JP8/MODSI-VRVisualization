@@ -157,7 +157,9 @@ if (sceneEl) {
 // --- END: UI and Application Shell ---
 
 
-// --- START: Charting Engine (Direct Port from Verified Test File) ---
+// --- START: Charting Engine ---
+
+const POSITION_SCALING_FACTOR = 2.0;
 
 // Chart and 3D Scene Configuration
 const POSITION_CONFIG = { startX: -10, baseY: 1.5, baseZ: 0, spacingX: 12, pieOffsetY: 3, bubbleOffsetY: 1, cylinderOffsetY: 0 };
@@ -191,6 +193,13 @@ function safeParseFloat(valueStr) {
     if (valueStr == null || String(valueStr).trim() === "") return 0;
     const value = parseFloat(valueStr);
     return isNaN(value) ? 0 : value;
+}
+
+function isCustomPositionValid(pos) {
+    return pos &&
+        typeof pos.x === 'number' &&
+        typeof pos.y === 'number' &&
+        typeof pos.z === 'number';
 }
 
 function getUnitForKPI(kpiId) {
@@ -280,7 +289,6 @@ function getChartDataForCurrentState(originalIndex) {
     currentTargetTimeStr = timePoints[currentTimePointIndex];
     const processedData = [];
 
-    // This is the main logic fork based on the chart's purpose
     if (isCorrelationChart) {
         if (chart.chartType === 'babia-bubbles') {
             kpiReferences.forEach(refKPI => {
@@ -306,17 +314,14 @@ function getChartDataForCurrentState(originalIndex) {
             });
         }
     } else {
-        // --- ORIGINAL LOGIC: Time-Series Charts ---
-        const kpiId = kpiReferences[0].id; // Only one KPI
-        let rawData;
+        const kpiId = kpiReferences[0].id;
         if (chart.chartType === 'babia-bubbles') {
-            // For time-series bubbles, we need both products on the Z-axis
             const p1Data = getKPIDataByTime(kpihistory, kpiId, timeAggregationMode, 'NewValue_1');
             const p2Data = getKPIDataByTime(kpihistory, kpiId, timeAggregationMode, 'NewValue_2');
             p1Data.forEach(item => { if (item.height > 0) processedData.push({ key: item.key, key2: "produto 1", height: item.height, radius: CONSTANT_BUBBLE_RADIUS }) });
             p2Data.forEach(item => { if (item.height > 0) processedData.push({ key: item.key, key2: "produto 2", height: item.height, radius: CONSTANT_BUBBLE_RADIUS }) });
         } else {
-            rawData = getKPIDataByTime(kpihistory, kpiId, timeAggregationMode, valueType);
+            const rawData = getKPIDataByTime(kpihistory, kpiId, timeAggregationMode, valueType);
             rawData.forEach(item => {
                 const dataPoint = { key: item.key };
                 if (chart.chartType === 'babia-pie') dataPoint.size = Math.max(0, item.height);
@@ -329,7 +334,6 @@ function getChartDataForCurrentState(originalIndex) {
     return processedData;
 }
 
-// Helper for original time-series data processing
 function getKPIDataByTime(kpihistory, targetKPIId, timeAggregationMode, valueType) {
     const kpiData = kpihistory.filter(item => (item.KPIId ?? item.KpiId) == targetKPIId);
     const finalData = [];
@@ -380,13 +384,12 @@ function navigateTime(originalIndex, direction) {
     }
 }
 
-function createChartButtons(originalIndex, state, visibleIndex) {
+function createChartButtons(originalIndex, state, chartPositionStr) {
     const chartConfig = chartsData[originalIndex];
     if (!chartConfig || !chartConfig.chart) return null;
 
     const { chart, isCorrelationChart } = chartConfig;
-    const posString = calculatePosition(visibleIndex, chart.chartType);
-    let [x, y, z] = posString.split(' ').map(parseFloat);
+    let [x, y, z] = chartPositionStr.split(' ').map(parseFloat);
 
     if (chart.chartType === "babia-pie") y = POSITION_CONFIG.baseY + POSITION_CONFIG.pieOffsetY;
     else if (chart.chartType === "babia-bubbles") y = POSITION_CONFIG.baseY + POSITION_CONFIG.bubbleOffsetY;
@@ -407,24 +410,12 @@ function createChartButtons(originalIndex, state, visibleIndex) {
     buttonsContainer.appendChild(timeAggButton);
     buttonVerticalOffset -= 0.8;
     
-    let showProductToggleButton = false;
     const isAnyKpiByProduct = chartConfig.kpiReferences.some(ref => {
         const kpiEntry = allKpiHistory.find(item => (item.KPIId ?? item.KpiId) === ref.id);
         return kpiEntry && kpiEntry.ByProduct === true;
     });
-    if (isAnyKpiByProduct) {
-        showProductToggleButton = true;
-        /*
-        for (const ref of chartConfig.kpiReferences) {
-            if (hasValidData(allKpiHistory, ref.id, 'NewValue_1') && hasValidData(allKpiHistory, ref.id, 'NewValue_2')) {
-                showProductToggleButton = true;
-                break;
-            }
-        }
-        */
-    }
 
-    if (showProductToggleButton) {
+    if (isAnyKpiByProduct) {
         const valueButton = document.createElement('a-entity');
         valueButton.setAttribute('geometry', 'primitive: box; width: 2.8; height: 0.6; depth: 0.1');
         valueButton.setAttribute('material', `color: ${state.valueType === 'NewValue_1' ? '#4CAF50' : '#FF9800'}`); 
@@ -466,30 +457,27 @@ function createChartButtons(originalIndex, state, visibleIndex) {
     return buttonsContainer;
 }
 
-// Adicione esta função ao seu ficheiro main.js
-
 function toggleChartTimeType(originalIndex) {
     if (!chartStates[originalIndex] || !TIME_TYPES[chartStates[originalIndex].timeAggregationMode]) return;
     
     const currentState = chartStates[originalIndex];
-    // Apanha o próximo modo de agregação da constante TIME_TYPES
     currentState.timeAggregationMode = TIME_TYPES[currentState.timeAggregationMode].next;
     
-    // Atualiza o índice do tempo para o último ponto disponível no novo modo
     const chartConfig = chartsData[originalIndex];
     const timePointsForNewMode = chartConfig.availableTimePointsByMode[currentState.timeAggregationMode] || [];
     currentState.currentTimePointIndex = Math.max(0, timePointsForNewMode.length - 1);
 
-    // Manda redesenhar o gráfico com o novo estado
     renderSingleChart(originalIndex);
 }
 
-function createChart(chartConfigData, originalIndex, visibleIndex) {
+function createChart(chartConfigData, originalIndex, positionStr, rotationStr, scaleStr) {
     const { chart, isCorrelationChart } = chartConfigData; 
     if (!chart) return null;
 
     const chartContainer = document.createElement('a-entity');
-    chartContainer.setAttribute('position', calculatePosition(visibleIndex, chart.chartType));
+    chartContainer.setAttribute('position', positionStr);
+    chartContainer.setAttribute('rotation', rotationStr);
+    chartContainer.setAttribute('scale', scaleStr);
     chartContainer.setAttribute('data-chart-index', originalIndex); 
 
     const chartDataForBabia = getChartDataForCurrentState(originalIndex);
@@ -535,18 +523,20 @@ function createChart(chartConfigData, originalIndex, visibleIndex) {
         pieEl.setAttribute('scale', '1.5 1.5 1.5');
         chartContainer.appendChild(pieEl);
     } else if (chart.chartType === "babia-bubbles") {
-        chartContainer.setAttribute('scale', BUBBLE_CHART_CONTAINER_SCALE);
+        const currentScale = chartContainer.getAttribute('scale');
+        
         const filteredBubbleData = chartDataForBabia.filter(d => d.height > 0); 
         if (filteredBubbleData.length === 0) {
             filteredBubbleData.push({ key: 'Sem dados', key2: '', height: 0, radius: 0 });
         }
-        const scaleYFactor = parseFloat(BUBBLE_CHART_CONTAINER_SCALE.split(" ")[1] || 1);
+        const scaleYFactor = currentScale.y;
         const titleY = (BUBBLE_CHART_VISUAL_HEIGHT_MAX / scaleYFactor) + (2 / scaleYFactor); 
         babiaSpecificConfig = `x_axis: key; z_axis: key2; height: height; radius: radius; palette: foxy; title: ${chartTitle}; titlePosition: 0 ${titleY} 0; heightMax: ${BUBBLE_CHART_VISUAL_HEIGHT_MAX}; radiusMax: ${CONSTANT_BUBBLE_RADIUS}; data: ${JSON.stringify(filteredBubbleData)}`;
         chartContainer.setAttribute('babia-bubbles', `${babiaCommonConfig} ${babiaSpecificConfig}`);
     } else if (chart.chartType === "babia-cyls") {
-        chartContainer.setAttribute('scale', CYLINDER_CHART_CONTAINER_SCALE);
-        const scaleYFactorCyl = parseFloat(CYLINDER_CHART_CONTAINER_SCALE.split(" ")[1] || 1);
+        const currentScale = chartContainer.getAttribute('scale');
+        
+        const scaleYFactorCyl = currentScale.y;
         const titleY = (CYLINDER_VISUAL_HEIGHT_MAX / scaleYFactorCyl) + (2 / scaleYFactorCyl) ;
         babiaSpecificConfig = `palette: ubuntu; title: ${chartTitle}; titlePosition: 0 ${titleY} 0; heightMax: ${CYLINDER_VISUAL_HEIGHT_MAX}; radiusMax: ${CONSTANT_CYLINDER_RADIUS}; x_axis: key; height: height; radius: radius; data: ${JSON.stringify(chartDataForBabia)}`;
         chartContainer.setAttribute('babia-cyls', `${babiaCommonConfig} ${babiaSpecificConfig}`);
@@ -580,9 +570,28 @@ function renderSingleChart(originalIndex) {
         const state = chartStates[originalIndex];
         if (!chartConfig || !state) return;
 
-        const newChartEl = createChart(chartConfig, originalIndex, visibleIndex);
+        const { chart } = chartConfig;
+        let positionStr, rotationStr, scaleStr;
+
+        if (isCustomPositionValid(chart.position)) {
+            // --- CHANGE: Apply 2x scaling here as well ---
+            const pos = chart.position;
+            positionStr = `${pos.x * POSITION_SCALING_FACTOR} ${pos.y * POSITION_SCALING_FACTOR} ${pos.z * POSITION_SCALING_FACTOR}`;
+
+            const rot = chart.position.rotation || {};
+            rotationStr = `${rot.x ?? 0} ${rot.y ?? 0} ${rot.z ?? 0}`;
+            const scale = chart.position.scale ?? 1;
+            scaleStr = `${scale} ${scale} ${scale}`;
+        } else {
+            positionStr = calculatePosition(visibleIndex, chart.chartType);
+            rotationStr = '0 0 0';
+            scaleStr = '1 1 1';
+        }
+
+        const newChartEl = createChart(chartConfig, originalIndex, positionStr, rotationStr, scaleStr);
         if (newChartEl) root.appendChild(newChartEl);
-        const newButtonsEl = createChartButtons(originalIndex, state, visibleIndex);
+        
+        const newButtonsEl = createChartButtons(originalIndex, state, positionStr);
         if (newButtonsEl) root.appendChild(newButtonsEl);
     }, 50);
 }
@@ -610,7 +619,6 @@ function initializeAllChartDataAndStates(rawChartsConfig, rawKpiHistory) {
         const { kpi1Name, kpi2Name } = parseGraphname(chartInfo.graphname);
         const kpiRefs = [];
 
-        // Adiciona o KPI do zAxis se existir
         if (chartInfo.zAxis) {
             kpiRefs.push({ 
                 id: parseInt(chartInfo.zAxis), 
@@ -619,10 +627,7 @@ function initializeAllChartDataAndStates(rawChartsConfig, rawKpiHistory) {
             });
         }
 
-        // Adiciona o KPI do yAxis se existir
         if (chartInfo.yAxis) {
-            // Se já houver um KPI (do zAxis), o nome deste será kpi2Name.
-            // Se for o único KPI, o nome será kpi1Name.
             const yAxisKpiName = kpiRefs.length > 0 ? 
                                  (kpi2Name || `KPI ${chartInfo.yAxis}`) : 
                                  (kpi1Name || `KPI ${chartInfo.yAxis}`);
@@ -634,15 +639,12 @@ function initializeAllChartDataAndStates(rawChartsConfig, rawKpiHistory) {
             });
         }
         
-        // Se, depois de verificar ambos os eixos, não encontrarmos nenhum KPI, ignoramos este gráfico.
         if (kpiRefs.length === 0) {
             console.warn(`Skipping chart "${chartInfo.graphname}" because no valid zAxis or yAxis KPI was found.`);
-            return; // O 'return' aqui funciona como 'continue' num forEach
+            return; 
         }
 
-        // Um gráfico é de correlação/comparação se tiver mais de 1 KPI.
         const isCorrelationChart = kpiRefs.length > 1;
-        
         const kpiIdsForChart = kpiRefs.map(ref => ref.id);
         const relevantKpiHistory = allKpiHistory.filter(entry => kpiIdsForChart.includes(entry.KPIId ?? entry.KpiId));
 
@@ -663,7 +665,7 @@ function initializeAllChartDataAndStates(rawChartsConfig, rawKpiHistory) {
             kpihistory: relevantKpiHistory, 
             chart: chartInfo, 
             kpiReferences: kpiRefs,
-            isCorrelationChart: isCorrelationChart, // Usamos a nossa nova variável
+            isCorrelationChart: isCorrelationChart,
             availableTimePointsByMode: availableTimePointsByMode
         };
         
@@ -679,20 +681,43 @@ function initializeAllChartDataAndStates(rawChartsConfig, rawKpiHistory) {
     chartStates = newChartStates;
 }
 
-
 function renderAllCharts() {
     if (!root) return;
     while (root.firstChild) root.removeChild(root.firstChild); 
+    
     let visibleChartIndex = 0;
     chartsData.forEach((chartConfig, originalIndex) => {
         let chartHasAnyData = chartConfig.kpiReferences.some(ref => hasValidData(allKpiHistory, ref.id, 'NewValue_1') || hasValidData(allKpiHistory, ref.id, 'NewValue_2'));
+        
         if (chartHasAnyData) {
             const state = chartStates[originalIndex];
             if (!state) return;
-            const el = createChart(chartConfig, originalIndex, visibleChartIndex);
+
+            const { chart } = chartConfig;
+            let positionStr, rotationStr, scaleStr;
+
+            if (isCustomPositionValid(chart.position)) {
+                // --- CHANGE: Apply 2x scaling ---
+                const pos = chart.position;
+                positionStr = `${pos.x * POSITION_SCALING_FACTOR} ${pos.y * POSITION_SCALING_FACTOR} ${pos.z * POSITION_SCALING_FACTOR}`;
+                
+                const rot = chart.position.rotation || {};
+                rotationStr = `${rot.x ?? 0} ${rot.y ?? 0} ${rot.z ?? 0}`;
+                
+                const scale = chart.position.scale ?? 1;
+                scaleStr = `${scale} ${scale} ${scale}`;
+            } else {
+                positionStr = calculatePosition(visibleChartIndex, chart.chartType);
+                rotationStr = '0 0 0';
+                scaleStr = '1 1 1';
+            }
+
+            const el = createChart(chartConfig, originalIndex, positionStr, rotationStr, scaleStr);
             if (el) root.appendChild(el);
-            const buttonsEl = createChartButtons(originalIndex, state, visibleChartIndex);
+            
+            const buttonsEl = createChartButtons(originalIndex, state, positionStr);
             if (buttonsEl) root.appendChild(buttonsEl);
+
             visibleChartIndex++;
         } else {
             console.warn(`Chart "${chartConfig.chart.graphname}" (Index ${originalIndex}) will not be rendered as it has no valid data.`);
