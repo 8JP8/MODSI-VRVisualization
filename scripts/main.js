@@ -32,7 +32,7 @@ function updateRoomSelectorCollapsedState() {
 
 function syncRoomUI(roomName) {
     const display = roomName || 'N/A';
-    if (roomInput) roomInput.value = roomName ? roomName : '';
+    if (roomInput) roomInput.value.toString.toUpperCase = roomName ? roomName : '';
     if (currentRoomDisplayLoading) currentRoomDisplayLoading.textContent = display;
     if (collapsedRoomInfo) {
         collapsedRoomInfo.textContent = 'Sala: ' + display;
