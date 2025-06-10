@@ -1,5 +1,3 @@
-// scripts/main.js
-
 const root = document.getElementById('charts-root');
 
 // --- START: UI and Application Shell (Original Logic) ---
@@ -22,14 +20,14 @@ const sceneEnvironment = document.getElementById('scene-environment');
 const API_BASE_URL = 'https://modsi-api-ffhhfgecfdehhscv.spaincentral-01.azurewebsites.net/api/Room/Get/';
 const API_CODE = 'z4tKbNFdaaXzHZ4ayn9pRQokNWYgRkbVkCjOxTxP-8ChAzFuMigGCw==';
 
-let currentRoom = 'LD5RU';
+let currentRoom = '';
 let isCollapsed = false;
 
 function updateRoomSelectorCollapsedState() {
     if (!roomSelector || !minimizeBtn || !collapsedRoomInfo) return;
     roomSelector.classList.toggle('collapsed', isCollapsed);
     minimizeBtn.textContent = isCollapsed ? '+' : '−';
-    collapsedRoomInfo.textContent = 'Room: ' + (currentRoom || 'N/A');
+    collapsedRoomInfo.textContent = 'Sala: ' + (currentRoom || 'N/A');
 }
 
 function syncRoomUI(roomName) {
@@ -37,7 +35,7 @@ function syncRoomUI(roomName) {
     if (roomInput) roomInput.value = roomName ? roomName : '';
     if (currentRoomDisplayLoading) currentRoomDisplayLoading.textContent = display;
     if (collapsedRoomInfo) {
-        collapsedRoomInfo.textContent = 'Room: ' + display;
+        collapsedRoomInfo.textContent = 'Sala: ' + display;
     }
 }
 
@@ -415,12 +413,15 @@ function createChartButtons(originalIndex, state, visibleIndex) {
         return kpiEntry && kpiEntry.ByProduct === true;
     });
     if (isAnyKpiByProduct) {
+        showProductToggleButton = true;
+        /*
         for (const ref of chartConfig.kpiReferences) {
             if (hasValidData(allKpiHistory, ref.id, 'NewValue_1') && hasValidData(allKpiHistory, ref.id, 'NewValue_2')) {
                 showProductToggleButton = true;
                 break;
             }
         }
+        */
     }
 
     if (showProductToggleButton) {
