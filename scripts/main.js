@@ -159,7 +159,7 @@ if (sceneEl) {
 
 // --- START: Charting Engine ---
 
-const POSITION_SCALING_FACTOR = 2.0;
+const POSITION_SCALING_FACTOR = 3.0;
 
 // Chart and 3D Scene Configuration
 const POSITION_CONFIG = { startX: -10, baseY: 1.5, baseZ: 0, spacingX: 12, pieOffsetY: 3, bubbleOffsetY: 1, cylinderOffsetY: 0 };
